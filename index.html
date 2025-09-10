@@ -1,0 +1,3128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>
+   Tools - Supp Robbu
+  </title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+  </script>
+  <link href="favicon.png" rel="icon" type="image/png"/>
+  <style>
+   /* === VARIÁVEIS DE CORES === */
+        :root {
+            --bg-light: #ffffff;
+            --bg-dark: #1a1a1a;
+            --text-light: #000000;
+            --text-dark: #ffffff;
+            --highlight: #ffe066;
+            --primary: #007bff;
+            --button-hover: #0056b3;
+            --toolbar-bg: #f8f9fa;
+            --toolbar-dark: #343a40;
+            --border-light: #dee2e6;
+            --border-dark: #495057;
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --column-bg: #f8f9fa;
+            --column-dark: #2c2c2c;
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --card-shadow-dark: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --surface-light: #ffffff;
+            --surface-dark: #2a2a2a;
+        }
+
+        /* === TEMAS ALTERNATIVOS === */
+        .theme-blue {
+            --bg-light: linear-gradient(135deg, #e6f0ff, #ffffff);
+            --bg-dark: linear-gradient(135deg, #003366, #000000);
+            --text-light: #001f3f;
+            --text-dark: #e6ffee;
+            --primary: #007bff;
+            --button-hover: #0056b3;
+            --surface-light: #e6f0ff;
+            --surface-dark: #0b1f33;
+
+        }
+
+
+        .theme-green {
+            --bg-light: linear-gradient(135deg, #e6ffee, #ffffff);
+            --bg-dark: linear-gradient(135deg, #004d26, #000000);
+
+            --surface-light: #e6ffee;
+            --surface-dark: #004d26;
+
+            --text-light: #003f1f;
+            --text-dark: #e6ffee;
+            --primary: #00994d;
+            --button-hover: #006633;
+        }
+
+
+        .theme-red {
+            --bg-light: linear-gradient(135deg, #ffe6e6, #ffffff);
+            --bg-dark: linear-gradient(135deg, #660000, #000000);
+
+            --surface-light: #ffe6e6;
+            --surface-dark: #660000;
+
+            --text-light: #3f0000;
+            --text-dark: #ffe6e6;
+            --primary: #dc3545;
+            --button-hover: #c82333;
+        }
+
+
+        .theme-orange {
+            --bg-light: linear-gradient(135deg, #fff2e6, #ffffff);
+            --bg-dark: linear-gradient(135deg, #663300, #000000);
+
+            --surface-light: #fff2e6;
+            --surface-dark: #663300;
+
+            --text-light: #3f1f00;
+            --text-dark: #fff2e6;
+            --primary: #fd7e14;
+            --button-hover: #e06900;
+        }
+
+
+        .theme-purple {
+            --bg-light: linear-gradient(135deg, #ede6ff, #ffffff);
+            --bg-dark: linear-gradient(135deg, #282a36 0%, #44475a 50%, #6272a4 100%);
+
+            --surface-light: #ede6ff;
+            --surface-dark: #282a36;
+
+            --text-light: #3a245d;
+            --text-dark: #f8f8f2;
+
+            --primary: #9a5ff0;
+            --button-hover: #7b45d4;
+        }
+
+        /* === ESTILO GERAL === */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            padding: 1rem;
+            overflow-x: hidden;
+        }
+
+        .dark-mode {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        /* === HEADER === */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .theme-toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-light);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .dark-mode .theme-toggle-group {
+            border-color: var(--border-dark);
+        }
+        .theme-toggle-group select {
+            border: none;
+            background: transparent;
+            margin-bottom: 0;
+        }
+        .theme-toggle-group button {
+            margin: 0;
+        }
+
+
+        /* === CONTROLES HORIZONTAIS === */
+        .controls-section {
+            background: var(--toolbar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dark-mode .controls-section {
+            background: var(--toolbar-dark);
+            border-color: var(--border-dark);
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .controls-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        #filtersGroup {
+            display: flex;
+            width: 100%;
+            gap: 1rem;
+        }
+        #filtersGroup input {
+            flex: 3;
+            min-width: 200px;
+        }
+        #filtersGroup select {
+            flex: 1;
+            min-width: 150px;
+            width: auto;
+        }
+        #filtersGroup input, #filtersGroup select {
+            margin-bottom: 0;
+        }
+
+
+        /* === ESTATÍSTICAS VISUAIS === */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--toolbar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dark-mode .stat-card {
+            background: var(--toolbar-dark);
+            border-color: var(--border-dark);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .stat-icon {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0.3;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        /* === LAYOUT EM COLUNAS === */
+        .columns-container {
+            display: flex;
+            gap: 1.5rem;
+            overflow-x: auto;
+            min-height: 500px;
+            padding-bottom: 1rem;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .column {
+            min-width: 300px;
+            max-width: 350px;
+            width: 320px;
+            background: var(--column-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+
+        .dark-mode .column {
+            background: var(--column-dark);
+            border-color: var(--border-dark);
+        }
+
+        .column.drop-zone {
+            border-color: var(--primary);
+            background: rgba(0, 123, 255, 0.1);
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .dark-mode .column-header {
+            border-bottom-color: var(--border-dark);
+        }
+
+        .column-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .column-count {
+            background: var(--primary);
+            color: white;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+        }
+
+        /* === CARTÕES DE NOTA === */
+        .note-card {
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            draggable: true;
+            max-height: 180px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dark-mode .note-card {
+            border-color: var(--border-dark);
+            box-shadow: var(--card-shadow-dark);
+        }
+
+        .note-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .note-card.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .note-card.completed {
+            opacity: 0.7;
+        }
+
+        /* === CORES DAS NOTAS === */
+        body .note-card[data-color="red"] {
+            background: #ffe6e6 !important;
+        }
+
+        body .note-card[data-color="blue"] {
+            background: #e6f0ff !important;
+        }
+
+        body .note-card[data-color="green"] {
+            background: #e6ffee !important;
+        }
+
+        body .note-card[data-color="yellow"] {
+            background: #fff9e6 !important;
+        }
+
+        body .note-card[data-color="orange"] {
+            background: #fff2e6 !important;
+        }
+
+        body .note-card[data-color="purple"] {
+            background: #f2e6ff !important;
+        }
+
+        body .note-card[data-color="pink"] {
+            background: #ffe6f0 !important;
+        }
+
+        body .note-card[data-color="cyan"] {
+            background: #e6ffff !important;
+        }
+
+        body .note-card[data-color="lime"] {
+            background: #f0ffe6 !important;
+        }
+
+        body .note-card[data-color="indigo"] {
+            background: #e6e6ff !important;
+        }
+
+        body .note-card[data-color="gray"] {
+            background: #e1e1e3 !important;
+        }
+
+        body.dark-mode .note-card[data-color="red"] {
+            background: linear-gradient(135deg, #4d1a1a, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="blue"] {
+            background: linear-gradient(135deg, #1a334d, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="green"] {
+            background: linear-gradient(135deg, #1a4d33, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="yellow"] {
+            background: linear-gradient(135deg, #4d4d1a, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="orange"] {
+            background: linear-gradient(135deg, #4d331a, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="purple"] {
+            background: linear-gradient(135deg, #331a4d, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="pink"] {
+            background: linear-gradient(135deg, #4d1a33, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="cyan"] {
+            background: linear-gradient(135deg, #1a4d4d, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="lime"] {
+            background: linear-gradient(135deg, #334d1a, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="indigo"] {
+            background: linear-gradient(135deg, #1a1a4d, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="red"] {
+            background: linear-gradient(135deg, #4d1a1a, #000000) !important;
+        }
+
+        body.dark-mode .note-card[data-color="gray"] {
+            background: linear-gradient(135deg, #2c2c2c, #000000) !important;
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .note-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.25rem;
+            margin-left: 0.5rem;
+        }
+
+        .note-action-btn {
+            background: none;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 0.25rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            transition: all 0.2s ease;
+            min-width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dark-mode .note-action-btn {
+            border-color: var(--border-dark);
+            color: var(--text-dark);
+        }
+
+        .note-action-btn:hover {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .note-action-btn.completed {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .note-action-btn.danger:hover {
+            background-color: #dc3545;
+            border-color: #c82333;
+            color: white;
+        }
+
+        .note-content {
+            -webkit-line-clamp: 3;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            white-space: pre-wrap;
+        }
+
+
+        .note-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin: 4px 0;
+        }
+
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        .note-group {
+            background: var(--primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+
+        /* === MODAL === */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-bg);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 95vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        .dark-mode .modal-content {
+            background: var(--bg-dark);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: nowrap;
+            gap: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            color: var(--text-light);
+            flex-shrink: 0;
+        }
+
+        .dark-mode .close-modal {
+            color: var(--text-dark);
+        }
+
+        .close-modal:hover {
+            background: var(--border-light);
+        }
+
+        .dark-mode .close-modal:hover {
+            background: var(--border-dark);
+        }
+        
+        #analysisViewModal, #imageResizeModal, #sideNoteModal {
+            z-index: 1001;
+        }
+
+        #analysisEditModal .modal-content {
+            max-width: 90vw;
+        }
+
+        /* === TOOLBAR DE FORMATAÇÃO APRIMORADA === */
+        .formatting-toolbar {
+            background: var(--toolbar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .dark-mode .formatting-toolbar {
+            background: var(--toolbar-dark);
+            border-color: var(--border-dark);
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 0.25rem;
+            padding-right: 0.5rem;
+            border-right: 1px solid var(--border-light);
+            margin-right: 0.5rem;
+            flex-wrap: wrap; 
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+            margin-right: 0;
+            padding-right: 0;
+        }
+
+        .dark-mode .toolbar-group {
+            border-right-color: var(--border-dark);
+        }
+
+        .toolbar-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-light);
+            transition: all 0.2s ease;
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dark-mode .toolbar-btn {
+            color: var(--text-dark);
+        }
+
+        .toolbar-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .toolbar-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--button-hover);
+        }
+
+        .toolbar-select {
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            padding: 0.5rem;
+            background: var(--surface-light);
+            color: var(--text-light);
+            font-size: 13px;
+            height: 36px;
+        }
+
+        .dark-mode .toolbar-select {
+            background: var(--surface-dark);
+            color: var(--text-dark);
+
+            border-color: var(--border-dark);
+        }
+
+        /* Paleta de cores para texto */
+        .text-color-palette {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .text-color-option {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid var(--border-light);
+            transition: transform 0.2s ease;
+        }
+        .text-color-option:hover {
+            transform: scale(1.2);
+            border-color: var(--primary);
+        }
+
+        /* === SELETOR DE CORES PREDEFINIDAS === */
+        .color-palette {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .color-option:hover,
+        .color-option.active {
+            border-color: var(--text-light);
+            transform: scale(1.1);
+        }
+
+        .dark-mode .color-option:hover,
+        .dark-mode .color-option.active {
+            border-color: var(--text-dark);
+        }
+
+        /* === EDITOR RICO E IMAGEM REDIMENSIONÁVEL === */
+        .rich-editor {
+            min-height: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            background: var(--bg-light);
+            color: var(--text-light);
+            margin-bottom: 1rem;
+            font-family: inherit;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .dark-mode .rich-editor {
+            background: var(--bg-dark);
+            color: var(--text-dark);
+            border-color: var(--border-dark);
+        }
+
+        .rich-editor:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .rich-editor img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin: 4px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        /* === INPUTS === */
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+            margin-bottom: 1rem;
+            background: var(--surface-light);
+            color: var(--text-light);
+            font-family: inherit;
+        }
+
+        .dark-mode input,
+        .dark-mode select,
+        .dark-mode textarea {
+            background: var(--surface-dark);
+            color: var(--text-dark);
+            border-color: var(--border-dark);
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        
+        /* CORREÇÃO: Remove o contorno de foco dos checkboxes */
+        input[type="checkbox"]:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+
+        /* === BOTÕES === */
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 0.25rem;
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.danger {
+            background-color: #dc3545;
+        }
+
+        button.danger:hover {
+            background-color: #c82333;
+        }
+
+        button.success {
+            background-color: #28a745;
+        }
+
+        button.success:hover {
+            background-color: #218838;
+        }
+
+        button.warning {
+            background-color: #ffc107;
+            color: #000;
+        }
+
+        button.warning:hover {
+            background-color: #e0a800;
+        }
+
+        button.secondary {
+            background-color: #6c757d;
+        }
+
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid var(--border-light);
+            padding: 0.5rem;
+            min-width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+        }
+        
+        .btn-icon.danger:hover {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .dark-mode .btn-icon {
+            border-color: var(--border-dark);
+            color: var(--text-dark);
+        }
+
+        .btn-icon:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* === UTILITÁRIOS === */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease;
+        }
+        
+        .slide-down {
+            animation: slideDown 0.3s ease-in-out;
+            overflow: hidden;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideDown {
+            from {
+                max-height: 0;
+                opacity: 0;
+            }
+            to {
+                max-height: 1000px;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* === MOBILE UI === */
+        .mobile-only { display: none !important; }
+        .desktop-only { display: block !important; }
+        .mobile-fab { display: none !important; }
+
+        .collapsible-section {
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        .collapsible-header {
+            padding: 0.75rem 1rem;
+            background: var(--toolbar-bg);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+        .collapsible-content {
+            padding: 1rem;
+            border-top: 1px solid var(--border-light);
+            display: none;
+        }
+        .collapsible-content.show {
+            display: block;
+        }
+        .collapsible-header .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+        .collapsible-header.open .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .dark-mode .collapsible-section, .dark-mode .collapsible-content {
+            border-color: var(--border-dark);
+        }
+        .dark-mode .collapsible-header {
+            background: var(--toolbar-dark);
+        }
+
+        /* === RESPONSIVIDADE === */
+        @media (max-width: 768px) {
+            .mobile-only { display: block !important; }
+            .desktop-only { display: none !important; }
+            body {
+                padding: 0.5rem;
+                padding-bottom: 80px; 
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header h1 {
+                text-align: center;
+                margin-bottom: 1rem;
+                font-size: 1.5rem;
+            }
+            
+            .header-controls {
+                justify-content: center;
+            }
+
+            .mobile-actions {
+                display: flex;
+                justify-content: space-around;
+                background: var(--toolbar-bg);
+                border: 1px solid var(--border-light);
+                border-radius: 12px;
+                padding: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .dark-mode .mobile-actions {
+                background: var(--toolbar-dark);
+                border-color: var(--border-dark);
+            }
+
+            .mobile-actions button {
+                flex: 1;
+                padding: 0.5rem;
+                font-size: 1.2rem;
+                margin: 0 0.25rem;
+                background: transparent;
+                color: var(--text-light);
+                border: none;
+            }
+            
+            .dark-mode .mobile-actions button {
+                color: var(--text-dark);
+            }
+
+            .mobile-fab {
+                display: flex !important;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                background-color: var(--primary);
+                color: white;
+                font-size: 24px;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                border: none;
+                z-index: 999;
+            }
+
+            .column {
+                min-width: 280px; 
+                width: 280px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1rem;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .analysis-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .analysis-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        /* === BULK ACTIONS === */
+        .bulk-actions {
+            background: var(--toolbar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .dark-mode .bulk-actions {
+            background: var(--toolbar-dark);
+            border-color: var(--border-dark);
+        }
+
+        .bulk-actions.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .bulk-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* === HIDING FILE INPUT === */
+        .image-upload {
+            display: none;
+        }
+
+        /* === PDF & JSON MODAL STYLING === */
+        .export-options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .export-options-container label, .export-options-list label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .export-options-container label > span, .export-options-list label > span {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .export-options-container label:hover, .export-options-list label:hover {
+            background: var(--toolbar-bg);
+        }
+        
+        .dark-mode .export-options-container label:hover, .dark-mode .export-options-list label:hover {
+            background: var(--toolbar-dark);
+        }
+
+        /* CORREÇÃO PARA O TEXTO "SELECIONAR TODAS" */
+        #selectAllContainer > label {
+            justify-content: flex-start;
+        }
+        #selectAllContainer > label > span {
+            flex-grow: 0; /* Impede que o texto cresça */
+            flex-shrink: 0; /* Impede que o texto encolha */
+            overflow: visible; /* Garante que o texto não seja cortado */
+        }
+
+        .export-options-container input[type="radio"], .export-options-list input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            flex-shrink: 0;
+        }
+        
+        .export-options-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .dark-mode .export-options-list {
+            border-color: var(--border-dark);
+        }
+
+        /* === ANÁLISE LAYOUT === */
+        .analysis-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .analysis-card {
+            background: var(--toolbar-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .dark-mode .analysis-card {
+            background: var(--toolbar-dark);
+            border-color: var(--border-dark);
+        }
+        
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap; 
+            gap: 0.5rem;
+        }
+        
+        .analysis-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .analysis-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow: hidden;
+        }
+        .analysis-content img {
+             max-width: 100%;
+             height: auto;
+             border-radius: 4px;
+             margin: 4px 0;
+        }
+        
+        .view-analysis-block {
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .dark-mode .view-analysis-block {
+            border-color: var(--border-dark);
+        }
+        .view-analysis-block:last-child {
+            margin-bottom: 0;
+        }
+        
+        .analysis-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .block-wrapper {
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: var(--surface-light);
+            transition: border-color 0.2s ease;
+        }
+        
+        .block-wrapper:hover {
+            border-color: var(--primary);
+        }
+
+        .block-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-light);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .dark-mode .block-toolbar {
+             border-color: var(--border-dark);
+             background: var(--toolbar-dark);
+        }
+
+        .block-toolbar button, .block-toolbar .toolbar-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0;
+        }
+        .drag-handle {
+            cursor: grab;
+            user-select: none;
+            padding: 0 0.5rem;
+        }
+        .block-wrapper.dragging {
+            opacity: 0.5;
+            background: var(--primary);
+        }
+        .block-content-editor {
+            min-height: 150px;
+            padding: 1rem;
+            font-family: inherit;
+            line-height: 1.6;
+            outline: none;
+        }
+        .dark-mode .block-content-editor {
+            color: var(--text-dark);
+            background: var(--surface-dark);
+        }
+        
+        /* === PDF EXPORT STYLING === */
+        .pdf-export-content {
+            position: absolute;
+            left: -9999px; /* Move off-screen */
+            top: 0;
+            background: white !important;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .pdf-export-content * {
+            color: black !important;
+            background: transparent !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            font-family: inherit !important;
+        }
+        .pdf-export-content img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        
+        /* === BALÃO DE PENSAMENTO (SIDE NOTE) === */
+        .side-note-btn {
+            color: var(--text-light);
+            opacity: 0.6;
+        }
+        .dark-mode .side-note-btn {
+            color: var(--text-dark);
+        }
+        .side-note-btn.has-note {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+  </style>
+
+
+ </head>
+ <body>
+  <header class="header">
+   <h1>
+    📝  Tarefas & Análises
+   </h1>
+   <div class="header-controls">
+     <div class="theme-toggle-group">
+         <select id="themeSelector">
+          <option value="">
+           Tema Padrão
+          </option>
+          <option value="theme-blue">
+           Tema Azul
+          </option>
+          <option value="theme-green">
+           Tema Verde
+          </option>
+          <option value="theme-red">
+           Tema Vermelho
+          </option>
+          <option value="theme-orange">
+           Tema Laranja
+          </option>
+          <option value="theme-purple">
+           Tema Roxo
+          </option>
+         </select>
+         <button class="btn-icon" id="darkModeToggle" title="Alternar modo escuro">
+          🌙
+         </button>
+     </div>
+   </div>
+  </header>
+
+  <div class="mobile-only">
+    <div class="mobile-actions">
+        <button onclick="openAnalysisPanel()" title="Acessar Análises">📊</button>
+        <button onclick="showPDFExportModal()" title="Exportar PDF">📄</button>
+        <button onclick="showJSONExportModal()" title="Exportar/Importar Notas">💾</button>
+        <input accept=".json" id="importFileMobile" onchange="importJSON(this)" style="display: none;" type="file"/>
+        <button onclick="document.getElementById('importFileMobile').click()" title="Importar Notas">📁</button>
+    </div>
+
+    <div class="collapsible-section">
+        <div class="collapsible-header" onclick="toggleCollapsible('statsContent')">
+            <span>Estatísticas</span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="collapsible-content" id="statsContent">
+            <div class="stats-container"></div>
+        </div>
+    </div>
+    
+    <div class="collapsible-section">
+        <div class="collapsible-header" onclick="toggleCollapsible('filtersContent')">
+            <span>Filtros</span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="collapsible-content" id="filtersContent">
+            <div id="filtersGroupMobile"></div>
+        </div>
+    </div>
+  </div>
+  
+  <button class="mobile-fab" onclick="openCreateModal()">+</button>
+  <div class="desktop-only stats-container-desktop">
+    <div class="stats-container"></div>
+  </div>
+
+  <div class="desktop-only controls-section">
+   <div class="controls-row">
+    <div class="control-group">
+     <button class="success" onclick="openCreateModal()">
+      ➕ Criar Nota
+     </button>
+     <button class="secondary" onclick="openAnalysisPanel()">
+      📊 Acessar Análises
+     </button>
+    </div>
+    <div class="control-group">
+     <button class="warning" onclick="showPDFExportModal()">
+      📄 Exportar Notas (PDF)
+     </button>
+     <button class="secondary" onclick="showJSONExportModal()">
+      💾 Exportar/Importar Notas
+     </button>
+     <input accept=".json" id="importFile" onchange="importJSON(this)" style="display: none;" type="file"/>
+    </div>
+   </div>
+   <div class="controls-row">
+    <div class="control-group" id="filtersGroup">
+    </div>
+   </div>
+  </div>
+  <div class="columns-container" id="columnsContainer">
+  </div>
+  
+  <div class="modal" id="noteModal">
+   <div class="modal-content">
+    <div class="modal-header">
+     <h2 class="modal-title" id="modalTitle">
+      Criar Nova Nota
+     </h2>
+     <button class="close-modal" onclick="closeModal()" type="button">
+      ×
+     </button>
+    </div>
+    <div class="modal-body">
+     <div class="formatting-toolbar">
+      <div class="toolbar-group">
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('bold')" title="Negrito" type="button">
+        <strong>
+         B
+        </strong>
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('italic')" title="Itálico" type="button">
+        <em>
+         I
+        </em>
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('underline')" title="Sublinhado" type="button">
+        <u>
+         U
+        </u>
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('strikeThrough')" title="Riscado" type="button">
+        <s>
+         S
+        </s>
+       </button>
+      </div>
+      <div class="toolbar-group">
+       <select class="toolbar-select" onchange="changeTextSize(this.value); this.value='';">
+        <option value="">
+         Tamanho
+        </option>
+        <option value="12px">
+         12px
+        </option>
+        <option value="14px">
+         14px
+        </option>
+        <option value="16px">
+         16px
+        </option>
+        <option value="18px">
+         18px
+        </option>
+        <option value="20px">
+         20px
+        </option>
+        <option value="24px">
+         24px
+        </option>
+       </select>
+       <select class="toolbar-select" onchange="formatText('fontName', this.value)">
+        <option value="">
+         Fonte
+        </option>
+        <option value="Arial">
+         Arial
+        </option>
+        <option value="Times New Roman">
+         Times
+        </option>
+        <option value="Courier New">
+         Courier
+        </option>
+        <option value="Georgia">
+         Georgia
+        </option>
+        <option value="Verdana">
+         Verdana
+        </option>
+       </select>
+      </div>
+      <div class="toolbar-group">
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('justifyLeft')" title="Alinhar à esquerda">
+        ◀
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('justifyCenter')" title="Centralizar">
+        ▬
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('justifyRight')" title="Alinhar à direita">
+        ▶
+       </button>
+      </div>
+      <div class="toolbar-group">
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('insertUnorderedList')" title="Lista">
+        • ◦
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('insertOrderedList')" title="Lista numerada">
+        1. 2.
+       </button>
+      </div>
+      <div class="toolbar-group" id="noteTextColorPalette">
+      </div>
+      <div class="toolbar-group">
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); document.getElementById('imageUpload').click()" title="Inserir imagem">
+        🖼️
+       </button>
+       <input accept="image/*" class="image-upload" id="imageUpload" onchange="insertImage(this)" type="file"/>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('createLink', prompt('URL do link:'))" title="Criar link">
+        🔗
+       </button>
+       <button class="toolbar-btn" onmousedown="event.preventDefault(); formatText('removeFormat')" title="Remover formatação">
+        🚫
+       </button>
+      </div>
+     </div>
+     <input id="modalTitleInput" placeholder="Título da nota..." required="" type="text"/>
+     <div class="rich-editor" contenteditable="true" id="modalContentEditor" placeholder="Digite o conteúdo da sua nota aqui...">
+     </div>
+     <input id="modalGroupInput" placeholder="Grupo (opcional)" type="text"/>
+     <div style="margin: 1rem 0;">
+      <label>
+       Cor da Nota:
+      </label>
+      <div class="color-palette" style="margin-top: 0.5rem;">
+       <div class="color-option" data-color="blue" onclick="selectNoteColor('blue')" style="background: #4a90e2; border: 2px solid #2c5282;" title="Azul">
+       </div>
+       <div class="color-option" data-color="green" onclick="selectNoteColor('green')" style="background: #48bb78; border: 2px solid #2f855a;" title="Verde">
+       </div>
+       <div class="color-option" data-color="red" onclick="selectNoteColor('red')" style="background: #f56565; border: 2px solid #c53030;" title="Vermelho">
+       </div>
+       <div class="color-option" data-color="yellow" onclick="selectNoteColor('yellow')" style="background: #ed8936; border: 2px solid #c05621;" title="Amarelo">
+       </div>
+       <div class="color-option" data-color="orange" onclick="selectNoteColor('orange')" style="background: #ff7f00; border: 2px solid #cc5500;" title="Laranja">
+       </div>
+       <div class="color-option" data-color="purple" onclick="selectNoteColor('purple')" style="background: #9f7aea; border: 2px solid #6b46c1;" title="Roxo">
+       </div>
+       <div class="color-option" data-color="pink" onclick="selectNoteColor('pink')" style="background: #ed64a6; border: 2px solid #b83280;" title="Rosa">
+       </div>
+       <div class="color-option" data-color="cyan" onclick="selectNoteColor('cyan')" style="background: #4fd1c7; border: 2px solid #319795;" title="Ciano">
+       </div>
+       <div class="color-option" data-color="lime" onclick="selectNoteColor('lime')" style="background: #68d391; border: 2px solid #38a169;" title="Verde Lima">
+       </div>
+       <div class="color-option" data-color="indigo" onclick="selectNoteColor('indigo')" style="background: #667eea; border: 2px solid #4c51bf;" title="Índigo">
+       </div>
+       <div class="color-option" data-color="gray" onclick="selectNoteColor('gray')" style="background: #e2e8f0; border: 2px solid #a0aec0;" title="Cinza">
+       </div>
+      </div>
+     </div>
+     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+      <button class="secondary" onclick="closeModal()" type="button">
+       Cancelar
+      </button>
+      <button class="success" onclick="saveNote()" type="button">
+       Salvar Nota
+      </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="modal" id="viewModal">
+   <div class="modal-content">
+    <div class="modal-header">
+     <h2 class="modal-title" id="viewModalTitle">
+      Visualizar Nota
+     </h2>
+     <div style="display: flex; gap: 0.5rem;">
+      <button class="btn-icon" id="viewEditBtn" onclick="editNote()" title="Editar" type="button">
+       ✏️
+      </button>
+      <button class="btn-icon" id="viewWhatsappShareBtn" onclick="shareNote('whatsapp')" title="WhatsApp" type="button">
+       📱
+      </button>
+      <button class="btn-icon" id="viewDiscordShareBtn" onclick="shareNote('discord')" title="Discord" type="button">
+       💬
+      </button>
+      <button class="close-modal" onclick="closeViewModal()" type="button">
+       ×
+      </button>
+     </div>
+    </div>
+    <div class="modal-body">
+     <div id="viewModalContent" style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.6;">
+     </div>
+     <div class="note-meta" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+      <span>
+       Grupo:
+       <span class="note-group" id="viewModalGroup">
+       </span>
+      </span>
+      <span>
+       Criado:
+       <span id="viewModalDate">
+       </span>
+      </span>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="modal" id="analysisModal">
+   <div class="modal-content">
+    <div class="modal-header">
+     <h2 class="modal-title">
+      Painel de Análises
+     </h2>
+     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <button class="success" onclick="openAnalysisCreateModal()">
+       ➕ Adicionar Análise
+      </button>
+      <button class="warning" onclick="openAnalysisExportModal('pdf')">
+       📄 Exportar PDF
+      </button>
+      <button class="secondary" onclick="openAnalysisExportModal('json')">
+       💾 Exportar JSON
+      </button>
+      <input accept=".json" id="importAnalysesFile" onchange="importAnalysesJSON()" style="display: none;" type="file"/>
+      <button class="secondary" onclick="document.getElementById('importAnalysesFile').click()">
+        📁 Importar JSON
+      </button>
+      <button class="close-modal" onclick="closeAnalysisModal()">
+       ×
+      </button>
+     </div>
+    </div>
+    <div id="analysisList" class="analysis-container">
+    </div>
+   </div>
+  </div>
+  <div class="modal" id="analysisViewModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="analysisViewModalTitle"></h2>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn-icon" id="copyAnalysisBtn" onclick="copyAnalysisContent()" title="Copiar Análise">📋</button>
+              <button class="close-modal" onclick="closeAnalysisViewModal()">×</button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div id="analysisViewModalContent" style="line-height: 1.6;"></div>
+            <div class="note-meta" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light);">
+              <span>Criado: <span id="analysisViewModalDate"></span></span>
+            </div>
+        </div>
+    </div>
+  </div>
+  <div class="modal" id="analysisEditModal">
+   <div class="modal-content">
+    <div class="modal-header">
+     <h2 class="modal-title" id="analysisModalTitle">
+      Adicionar Nova Análise
+     </h2>
+     <button class="close-modal" onclick="closeAnalysisEditModal()">
+      ×
+     </button>
+    </div>
+    <div class="modal-body">
+     <input id="analysisTitleInput" placeholder="Título da Análise..." required="" type="text"/>
+     <div id="analysisBlocksContainer" style="margin-bottom: 1rem;">
+     </div>
+     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <button class="secondary" onclick="addAnalysisBlock()">
+       ➕ Adicionar Novo Bloco
+      </button>
+     </div>
+     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+      <button class="secondary" onclick="closeAnalysisEditModal()">
+       Cancelar
+      </button>
+      <button class="success" onclick="saveAnalysis()">
+       Salvar Análise
+      </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <div class="modal" id="pdfExportModal">
+   <div class="modal-content" style="max-width: 500px; padding: 1.5rem;">
+    <div class="modal-header">
+     <h2 class="modal-title">
+      Exportar Notas para PDF
+     </h2>
+     <button class="close-modal" onclick="closePDFExportModal()" type="button">
+      ×
+     </button>
+    </div>
+    <div class="modal-body">
+    </div>
+   </div>
+  </div>
+  <div class="modal" id="jsonExportModal">
+   <div class="modal-content" style="max-width: 500px; padding: 1.5rem;">
+    <div class="modal-header">
+     <h2 class="modal-title">
+      Exportar/Importar Notas
+     </h2>
+     <button class="close-modal" onclick="closeJSONExportModal()" type="button">
+      ×
+     </button>
+    </div>
+    <div class="modal-body">
+     <h4>Exportar Notas</h4>
+     <p>Selecione quais notas deseja exportar como backup.</p>
+      <div id="jsonExportOptionsContainer">
+      </div>
+     <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+      <button class="success" onclick="exportNotesToJson()">
+       Exportar
+      </button>
+     </div>
+     <hr style="margin: 2rem 0; border-color: var(--border-light);">
+     <h4>Importar Notas</h4>
+     <p>Selecione um arquivo <code>.json</code> para adicionar notas ao seu bloco. As notas importadas serão adicionadas às existentes.</p>
+     <button class="secondary" onclick="document.getElementById('importFile').click()">
+      📁 Escolher Arquivo para Importar
+     </button>
+    </div>
+   </div>
+  </div>
+  
+  <div class="modal" id="analysisExportModal">
+   <div class="modal-content" style="max-width: 500px; padding: 1.5rem;">
+    <div class="modal-header">
+     <h2 class="modal-title" id="analysisExportModalTitle"></h2>
+     <button class="close-modal" onclick="closeAnalysisExportModal()" type="button">
+      ×
+     </button>
+    </div>
+    <div class="modal-body">
+        <p>Selecione as análises que deseja exportar.</p>
+        <div class="export-options-container" id="selectAllContainer">
+        </div>
+        <div class="export-options-list" id="analysisExportOptionsList">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+             <button class="secondary" onclick="closeAnalysisExportModal()" type="button">
+              Cancelar
+             </button>
+             <button class="success" id="confirmAnalysisExportBtn">
+              Exportar
+             </button>
+        </div>
+    </div>
+   </div>
+  </div>
+
+  <div class="modal" id="imageResizeModal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Ajustar Tamanho da Imagem</h2>
+            <button class="close-modal" onclick="closeImageResizeModal()" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 1rem;">
+                <label for="imageWidthInput">Largura (px):</label>
+                <input id="imageWidthInput" type="number" placeholder="ex: 300">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; width: auto; cursor: pointer;">
+                    <input type="checkbox" id="aspectRatioToggle" checked style="width: auto; margin: 0;">
+                    Manter proporções
+                </label>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="secondary" onclick="closeImageResizeModal()" type="button">Cancelar</button>
+                <button class="success" onclick="applyImageResize()" type="button">Aplicar</button>
+            </div>
+        </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="sideNoteModal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h2 class="modal-title">Anotação do Bloco</h2>
+            <button class="close-modal" onclick="closeSideNoteModal()" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="sideNoteBlockId">
+            <textarea id="sideNoteTextarea" placeholder="Digite sua anotação aqui..." style="min-height: 150px; resize: vertical;"></textarea>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem;">
+                <button class="danger" onclick="deleteSideNote()" type="button">Excluir</button>
+                <button class="success" onclick="saveSideNote()" type="button">Salvar Anotação</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script>
+   let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    let analyses = JSON.parse(localStorage.getItem('analyses')) || [];
+    let selectedNoteId = null;
+    let selectedNoteForView = null;
+    let currentAnalysisId = null;
+    let selectedAnalysisForViewId = null;
+    let imageToResize = null;
+
+    const textColors = ['initial', '#000000', '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff', '#ffffff', '#facccc', '#ffebcc', '#ffffcc', '#cce8cc', '#cce0f5', '#ebd6ff'];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setupDesktopUI();
+        setupMobileUI();
+        setupDragAndDrop();
+        renderColumns();
+        updateStats();
+        setupFilters();
+        setupImageToggling();
+        
+        document.getElementById('noteTextColorPalette').innerHTML = generateColorPaletteHTML('applyTextColor');
+    });
+
+    function generateColorPaletteHTML(actionFunctionName) {
+        let paletteHTML = `<div title="Cor do Texto" style="display: flex; align-items: center; gap: 5px;">🎨<div class="text-color-palette">`;
+        textColors.forEach(color => {
+            const action = actionFunctionName.includes('Analysis') 
+                ? `onmousedown="event.preventDefault(); ${actionFunctionName}(this, 'foreColor', '${color}')"`
+                : `onmousedown="event.preventDefault(); ${actionFunctionName}('foreColor', '${color}')"`;
+
+            if (color === 'initial') {
+                paletteHTML += `<div class="text-color-option" style="background: linear-gradient(to bottom right, #000 49%, #FFF 51%);" title="Cor Padrão" ${action}></div>`;
+            } else {
+                paletteHTML += `<div class="text-color-option" style="background-color:${color};" ${action}></div>`;
+            }
+        });
+        paletteHTML += `</div></div>`;
+        return paletteHTML;
+    }
+
+    // --- MELHORIA PRINCIPAL: NOVA LÓGICA ---
+    
+    // MODIFICAÇÃO 1: Função para remover a cor foi substituída pelo comando 'removeFormat'.
+    // A nova abordagem usa o comando 'foreColor' com um valor nulo, que é mais direcionado,
+    // mas por segurança usamos o `removeFormat` que engloba a remoção de cor.
+    // Para evitar remover negrito/itálico, a abordagem mais segura é usar `execCommand('foreColor', false, 'initial')`
+    // e tratá-la para simplesmente remover os nós de cor.
+    function applyTextColor(command, color) {
+        const editor = document.getElementById('modalContentEditor');
+        editor.focus();
+
+        if (color === 'initial') {
+            // Em vez de aplicar uma cor, usamos o comando para remover a formatação de cor.
+            document.execCommand('removeFormat', false, 'foreColor');
+        } else {
+            document.execCommand(command, false, color);
+        }
+    }
+    
+    function formatAnalysisBlock(buttonElement, command, value = null) {
+        const editor = buttonElement.closest('.block-wrapper').querySelector('.block-content-editor');
+        editor.focus();
+
+        if (command === 'foreColor' && value === 'initial') {
+             // A mesma lógica é aplicada aqui.
+            document.execCommand('removeFormat', false, 'foreColor');
+        } else {
+            document.execCommand(command, false, value);
+        }
+    }
+
+    // O restante do código permanece o mesmo.
+    // ... (todo o resto do seu código js)
+    
+    function setupDesktopUI() {
+        const filtersContainer = document.getElementById('filtersGroup');
+        filtersContainer.innerHTML = `
+            <input class="keyword-filter" placeholder="🔍 Buscar notas..." type="text"/>
+            <select class="group-filter">
+                <option value="">Todos os grupos</option>
+            </select>
+        `;
+
+        const statsContainer = document.querySelector('.stats-container-desktop .stats-container');
+        statsContainer.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-number" id="activeNotesCountDesktop">0</div>
+                <div class="stat-label">Ativas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-number" id="groupsCountDesktop">0</div>
+                <div class="stat-label">Grupos</div>
+            </div>
+                <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number" id="completedNotesCountDesktop">0</div>
+                <div class="stat-label">Concluídas</div>
+            </div>
+                <div class="stat-card">
+                <div class="stat-icon">📄</div>
+                <div class="stat-number" id="totalNotesCountDesktop">0</div>
+                <div class="stat-label">Total de Notas</div>
+            </div>
+        `;
+    }
+
+    function setupMobileUI() {
+        const filtersContainer = document.getElementById('filtersGroupMobile');
+        filtersContainer.innerHTML = document.getElementById('filtersGroup').innerHTML;
+
+        const statsContainer = document.querySelector('#statsContent .stats-container');
+        statsContainer.innerHTML = document.querySelector('.stats-container-desktop .stats-container').innerHTML;
+    }
+
+    const columnStatusMap = {
+      'Anotações': 'notes',
+      'A fazer': 'to-do',
+      'Em progresso': 'in-progress',
+      'Aguardando': 'impediment',
+      'Agendas': 'agenda',
+      'Concluídas': 'completed'
+    };
+
+    function setupDragAndDrop() {
+        const columnsContainer = document.getElementById('columnsContainer');
+        columnsContainer.innerHTML = '';
+        
+        const columnTitles = Object.keys(columnStatusMap);
+
+        columnTitles.forEach(title => {
+            const columnId = columnStatusMap[title];
+            const columnEl = document.createElement('div');
+            columnEl.className = 'column';
+            columnEl.id = `column-${columnId}`;
+            columnEl.ondragover = allowDrop;
+            columnEl.ondrop = (event) => dropNote(event, columnId);
+            columnEl.ondragleave = onDragLeave;
+            columnEl.innerHTML = `
+                <div class="column-header">
+                    <span class="column-title">${title}</span>
+                    <span class="column-count" id="count-${columnId}">0</span>
+                </div>
+            `;
+            columnsContainer.appendChild(columnEl);
+        });
+
+    }
+
+    function allowDrop(event) {
+        event.preventDefault();
+        const column = event.target.closest('.column');
+        if (column) {
+            column.classList.add('drop-zone');
+        }
+    }
+
+    function onDragLeave(event) {
+        const column = event.target.closest('.column');
+        if (column) {
+            column.classList.remove('drop-zone');
+        }
+    }
+
+    function drag(event) {
+        event.dataTransfer.setData("text", event.target.dataset.id);
+        setTimeout(() => {
+            event.target.classList.add('dragging');
+        }, 0);
+    }
+
+    function dragEnd(event) {
+        event.target.classList.remove('dragging');
+        const columns = document.querySelectorAll('.column');
+        columns.forEach(column => column.classList.remove('drop-zone'));
+    }
+
+    function dropNote(event, newStatus) {
+        event.preventDefault();
+        const id = event.dataTransfer.getData("text");
+        const noteEl = document.querySelector(`[data-id="${id}"]`);
+        if(noteEl) noteEl.classList.remove('dragging');
+
+        const noteIndex = notes.findIndex(note => note.id == id);
+        if (noteIndex !== -1) {
+            notes[noteIndex].status = newStatus;
+            saveNotes();
+            renderColumns();
+        }
+
+        const columns = document.querySelectorAll('.column');
+        columns.forEach(column => column.classList.remove('drop-zone'));
+    }
+
+    function renderColumns() {
+        const columnIds = Object.values(columnStatusMap);
+    
+        columnIds.forEach(columnId => {
+            const columnEl = document.getElementById(`column-${columnId}`);
+            if (columnEl) {
+                while (columnEl.children.length > 1) {
+                    columnEl.removeChild(columnEl.lastChild);
+                }
+            }
+        });
+    
+        const desktopFilters = document.getElementById('filtersGroup');
+        const mobileFilters = document.getElementById('filtersGroupMobile');
+        const visibleFilterContainer = desktopFilters.offsetParent ? desktopFilters : mobileFilters;
+    
+        const filterInput = visibleFilterContainer.querySelector('.keyword-filter');
+        const groupFilter = visibleFilterContainer.querySelector('.group-filter');
+    
+        const filterText = filterInput.value.toLowerCase();
+        const filterGroup = groupFilter.value;
+    
+        let counts = {};
+        columnIds.forEach(id => counts[id] = 0);
+    
+        const filteredNotes = notes.filter(note => {
+            const noteContentText = new DOMParser().parseFromString(note.content, "text/html").documentElement.textContent.toLowerCase();
+            const textMatch = !filterText || note.title.toLowerCase().includes(filterText) || noteContentText.includes(filterText);
+            const groupMatch = !filterGroup || note.group === filterGroup;
+            return textMatch && groupMatch;
+        });
+    
+        filteredNotes.forEach(note => {
+            const column = document.getElementById(`column-${note.status}`);
+            if (column) {
+                const card = createNoteCard(note);
+                column.appendChild(card);
+                counts[note.status]++;
+            }
+        });
+    
+        updateStats(); 
+    
+        columnIds.forEach(id => {
+            const countEl = document.getElementById(`count-${id}`);
+            if(countEl) countEl.textContent = counts[id];
+        });
+    
+        const allGroupFilters = document.querySelectorAll('.group-filter');
+        allGroupFilters.forEach(groupFilterSelect => {
+            const currentSelectedGroup = groupFilterSelect.value;
+            const groups = new Set(notes.map(note => note.group).filter(Boolean));
+            groupFilterSelect.innerHTML = '<option value="">Todos os grupos</option>';
+            Array.from(groups).sort().forEach(group => {
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                groupFilterSelect.appendChild(option);
+            });
+            groupFilterSelect.value = currentSelectedGroup;
+        });
+    }
+
+
+    function createNoteCard(note) {
+        const card = document.createElement('div');
+        card.className = `note-card ${note.status === 'completed' ? 'completed' : ''}`;
+        card.dataset.id = note.id;
+        card.dataset.color = note.color;
+        card.draggable = true;
+        card.ondragstart = drag;
+        card.ondragend = dragEnd;
+        card.onclick = (event) => {
+            if (event.target.closest('button') || event.target.tagName === 'IMG') {
+                return;
+            }
+            viewNote(note.id);
+        };
+
+        const noteHeader = document.createElement('div');
+        noteHeader.className = 'note-header';
+        const noteTitle = document.createElement('h3');
+        noteTitle.className = 'note-title';
+        noteTitle.textContent = note.title;
+        const noteActions = document.createElement('div');
+        noteActions.className = 'note-actions';
+        const completeBtn = document.createElement('button');
+        completeBtn.className = `note-action-btn ${note.status === 'completed' ? 'completed' : ''}`;
+        completeBtn.innerHTML = note.status === 'completed' ? '✅' : '✔️';
+        completeBtn.title = note.status === 'completed' ? 'Marcar como não concluída' : 'Marcar como concluída';
+        completeBtn.onclick = (event) => {
+            event.stopPropagation();
+            toggleComplete(note.id);
+        };
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'note-action-btn danger';
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.title = 'Excluir nota';
+        deleteBtn.onclick = (event) => {
+            event.stopPropagation();
+            deleteNote(note.id);
+        };
+        noteActions.appendChild(completeBtn);
+        noteActions.appendChild(deleteBtn);
+        noteHeader.appendChild(noteTitle);
+        noteHeader.appendChild(noteActions);
+        card.appendChild(noteHeader);
+        const noteContent = document.createElement('div');
+        noteContent.className = 'note-content';
+        noteContent.innerHTML = note.content;
+        card.appendChild(noteContent);
+        const noteMeta = document.createElement('div');
+        noteMeta.className = 'note-meta';
+        noteMeta.innerHTML = `
+            ${note.group ? `<span class="note-group">${note.group}</span>` : ''}
+            <span>${new Date(note.createdAt).toLocaleDateString()}</span>
+        `;
+        card.appendChild(noteMeta);
+        return card;
+    }
+
+
+    function toggleComplete(id) {
+        const note = notes.find(n => n.id === id);
+        if (note) {
+            note.status = note.status === 'completed' ? 'to-do' : 'completed';
+            saveNotes();
+            renderColumns();
+        }
+    }
+    
+    function deleteNote(id) {
+        if (confirm('Tem certeza que deseja excluir esta nota? A ação não poderá ser desfeita.')) {
+            notes = notes.filter(n => n.id !== id);
+            saveNotes();
+            renderColumns();
+        }
+    }
+
+    function openCreateModal() {
+        selectedNoteId = null;
+        document.getElementById('modalTitle').textContent = 'Criar Nova Nota';
+        document.getElementById('modalTitleInput').value = '';
+        document.getElementById('modalContentEditor').innerHTML = '';
+        document.getElementById('modalGroupInput').value = '';
+        selectNoteColor('blue');
+        document.getElementById('noteModal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('noteModal').classList.remove('show');
+    }
+
+    function saveNote() {
+        const title = document.getElementById('modalTitleInput').value;
+        const content = document.getElementById('modalContentEditor').innerHTML;
+        const group = document.getElementById('modalGroupInput').value;
+        const color = document.querySelector('.color-option.active')?.dataset.color || 'gray';
+
+        if (!title.trim()) {
+            alert('O título da nota é obrigatório.');
+            return;
+        }
+
+        if (selectedNoteId) {
+            const note = notes.find(n => n.id === selectedNoteId);
+            if (note) {
+                note.title = title;
+                note.content = content;
+                note.group = group;
+                note.color = color;
+            }
+        } else {
+            const newNote = {
+                id: Date.now(),
+                title: title,
+                content: content,
+                group: group,
+                color: color,
+                status: 'to-do',
+                createdAt: new Date().toISOString()
+            };
+            notes.push(newNote);
+        }
+
+        saveNotes();
+        closeModal();
+        renderColumns();
+    }
+
+    function saveNotes() {
+        localStorage.setItem('notes', JSON.stringify(notes));
+        updateStats();
+    }
+
+    function viewNote(id) {
+        selectedNoteForView = notes.find(n => n.id === id);
+        if (selectedNoteForView) {
+            document.getElementById('viewModalTitle').textContent = selectedNoteForView.title;
+            document.getElementById('viewModalContent').innerHTML = selectedNoteForView.content;
+            document.getElementById('viewModalGroup').textContent = selectedNoteForView.group || 'N/A';
+            document.getElementById('viewModalDate').textContent = new Date(selectedNoteForView.createdAt).toLocaleDateString();
+            document.getElementById('viewModal').classList.add('show');
+        }
+    }
+    
+    function editNote() {
+        if (!selectedNoteForView) return;
+        selectedNoteId = selectedNoteForView.id;
+        document.getElementById('modalTitle').textContent = 'Editar Nota';
+        document.getElementById('modalTitleInput').value = selectedNoteForView.title;
+        document.getElementById('modalContentEditor').innerHTML = selectedNoteForView.content;
+        document.getElementById('modalGroupInput').value = selectedNoteForView.group;
+        selectNoteColor(selectedNoteForView.color);
+        closeViewModal();
+        document.getElementById('noteModal').classList.add('show');
+    }
+
+    function shareNote(platform) {
+        if (!selectedNoteForView) return;
+        const note = selectedNoteForView;
+        const text = `*${note.title}*\n\n${note.content.replace(/<[^>]*>/g, '')}\n\nGrupo: ${note.group || 'N/A'}\nCriado em: ${new Date(note.createdAt).toLocaleDateString()}`;
+
+        if (platform === 'whatsapp') {
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        } else if (platform === 'discord') {
+            alert('Para compartilhar no Discord, copie o texto abaixo e cole no seu canal:\n\n' + text);
+        }
+    }
+
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.remove('show');
+        selectedNoteForView = null;
+    }
+
+    function showPDFExportModal() {
+        const modal = document.getElementById('pdfExportModal');
+        const body = modal.querySelector('.modal-body');
+        
+        const groups = new Set(notes.map(note => note.group).filter(Boolean));
+        let groupOptionsHTML = '';
+        groups.forEach(g => groupOptionsHTML += `<option value="${g}">${g}</option>`);
+
+        body.innerHTML = `
+            <h3 style="margin-bottom: 1rem;">Quais notas exportar?</h3>
+            <div class="export-options-container">
+                <label><span>Todas as notas</span><input type="radio" name="pdfExportType" value="all" checked></label>
+                <label><span>Apenas notas ativas</span><input type="radio" name="pdfExportType" value="active"></label>
+                <label><span>Apenas notas concluídas</span><input type="radio" name="pdfExportType" value="completed"></label>
+                <label><span>Por grupo específico</span><input type="radio" name="pdfExportType" value="group"></label>
+            </div>
+            <div id="pdfGroupSelectDiv" style="display: none; margin-bottom: 1rem;">
+                <select id="pdfGroupSelect" style="width: 100%;">${groupOptionsHTML}</select>
+            </div>
+            <div class="export-options-container" style="margin-bottom: 1.5rem;">
+                <label><span>Incluir metadados (grupo, data)</span><input type="checkbox" id="includeMetadata" checked></label>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem;">
+                <button class="secondary" onclick="closePDFExportModal()">Cancelar</button>
+                <button class="success" onclick="exportNotesToPdf()">Exportar</button>
+            </div>
+        `;
+
+        modal.querySelectorAll('input[name="pdfExportType"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.getElementById('pdfGroupSelectDiv').style.display = e.target.value === 'group' ? 'block' : 'none';
+            });
+        });
+
+        modal.classList.add('show');
+    }
+
+    function closePDFExportModal() {
+        document.getElementById('pdfExportModal').classList.remove('show');
+    }
+    
+    function showJSONExportModal() {
+        const modal = document.getElementById('jsonExportModal');
+        const container = document.getElementById('jsonExportOptionsContainer');
+        const groups = new Set(notes.map(note => note.group).filter(Boolean));
+        let groupOptionsHTML = '';
+        groups.forEach(g => groupOptionsHTML += `<option value="${g}">${g}</option>`);
+
+        container.innerHTML = `
+            <div class="export-options-container">
+                <label><span>Todas as notas</span><input type="radio" name="jsonExportType" value="all" checked></label>
+                <label><span>Apenas notas ativas</span><input type="radio" name="jsonExportType" value="active"></label>
+                <label><span>Apenas notas concluídas</span><input type="radio" name="jsonExportType" value="completed"></label>
+                <label><span>Por grupo específico</span><input type="radio" name="jsonExportType" value="group"></label>
+            </div>
+            <div id="jsonGroupSelectDiv" style="display: none; margin-bottom: 1rem;">
+                <select id="jsonGroupSelect" style="width: 100%;">${groupOptionsHTML}</select>
+            </div>
+        `;
+        
+        modal.querySelectorAll('input[name="jsonExportType"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                document.getElementById('jsonGroupSelectDiv').style.display = e.target.value === 'group' ? 'block' : 'none';
+            });
+        });
+
+        modal.classList.add('show');
+    }
+
+    function closeJSONExportModal() {
+        document.getElementById('jsonExportModal').classList.remove('show');
+    }
+
+    async function exportNotesToPdf() {
+        const exportType = document.querySelector('#pdfExportModal input[name="pdfExportType"]:checked').value;
+        const includeMetadata = document.querySelector('#pdfExportModal #includeMetadata').checked;
+        const group = document.querySelector('#pdfExportModal #pdfGroupSelect').value;
+
+        let notesToExport = [];
+        if (exportType === 'all') notesToExport = notes;
+        else if (exportType === 'active') notesToExport = notes.filter(n => n.status !== 'completed');
+        else if (exportType === 'completed') notesToExport = notes.filter(n => n.status === 'completed');
+        else if (exportType === 'group' && group) notesToExport = notes.filter(n => n.group === group);
+
+        if (notesToExport.length === 0) {
+            alert("Nenhuma nota para exportar com os filtros selecionados.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 10;
+        const margin = 10;
+        const pageHeight = doc.internal.pageSize.height;
+        
+        for (const note of notesToExport) {
+            doc.setFontSize(16); doc.text(note.title, margin, y); y += 10;
+            if (includeMetadata) {
+                doc.setFontSize(10); doc.setTextColor(100);
+                doc.text(`Grupo: ${note.group || 'N/A'}`, margin, y); y += 6;
+                doc.text(`Criado em: ${new Date(note.createdAt).toLocaleDateString()}`, margin, y); y += 6;
+                doc.setTextColor(0);
+            }
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'pdf-export-content';
+            tempDiv.innerHTML = note.content;
+            document.body.appendChild(tempDiv);
+            
+            const canvas = await html2canvas(tempDiv, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const imgHeight = (canvas.height * 180) / canvas.width;
+            
+            if (y + imgHeight > pageHeight - margin) { doc.addPage(); y = margin; }
+            doc.addImage(imgData, 'PNG', margin, y, 180, imgHeight);
+            y += imgHeight + 10;
+            document.body.removeChild(tempDiv);
+            if (y > pageHeight - margin) { doc.addPage(); y = margin; }
+        }
+        
+        doc.save('notas.pdf');
+        closePDFExportModal();
+    }
+    
+    function exportNotesToJson() {
+        const exportType = document.querySelector('#jsonExportModal input[name="jsonExportType"]:checked').value;
+        const group = document.querySelector('#jsonExportModal #jsonGroupSelect').value;
+
+        let notesToExport = [];
+        if (exportType === 'all') notesToExport = notes;
+        else if (exportType === 'active') notesToExport = notes.filter(n => n.status !== 'completed');
+        else if (exportType === 'completed') notesToExport = notes.filter(n => n.status === 'completed');
+        else if (exportType === 'group' && group) notesToExport = notes.filter(n => n.group === group);
+
+        if (notesToExport.length === 0) {
+            alert("Nenhuma nota para exportar com os filtros selecionados.");
+            return;
+        }
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notesToExport));
+        const a = document.createElement('a');
+        a.href = dataStr;
+        a.download = "notas.json";
+        a.click();
+    }
+    
+    function importJSON(inputElement) {
+        const file = inputElement.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (!Array.isArray(importedData)) throw new Error("O arquivo JSON não é um array válido.");
+
+                const existingIds = new Set(notes.map(n => n.id));
+                const newNotes = importedData.map(note => ({
+                    id: !note.id || existingIds.has(note.id) ? Date.now() + Math.random() : note.id,
+                    title: note.title || 'Sem Título',
+                    content: note.content || '',
+                    group: note.group || '',
+                    color: note.color || 'gray',
+                    status: note.status || 'to-do',
+                    createdAt: note.createdAt || new Date().toISOString()
+                }));
+                notes.push(...newNotes);
+                saveNotes();
+                renderColumns();
+                alert(`${newNotes.length} nota(s) importada(s) com sucesso!`);
+            } catch (error) {
+                alert('Erro ao importar arquivo: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+        inputElement.value = '';
+    }
+    
+    function openAnalysisPanel() {
+        document.getElementById('analysisModal').classList.add('show');
+        renderAnalysisBlocks();
+    }
+
+    function closeAnalysisModal() {
+        document.getElementById('analysisModal').classList.remove('show');
+    }
+    
+    function viewAnalysis(id) {
+        const analysis = analyses.find(a => a.id === id);
+        if (analysis) {
+            selectedAnalysisForViewId = id;
+            document.getElementById('analysisViewModalTitle').textContent = analysis.title;
+            const contentHTML = analysis.blocks.map(b => `<div class="view-analysis-block">${b.content}</div>`).join('');
+            document.getElementById('analysisViewModalContent').innerHTML = contentHTML;
+            document.getElementById('analysisViewModalDate').textContent = new Date(analysis.createdAt).toLocaleDateString();
+            document.getElementById('analysisViewModal').classList.add('show');
+        }
+    }
+    
+    function closeAnalysisViewModal() {
+        document.getElementById('analysisViewModal').classList.remove('show');
+        selectedAnalysisForViewId = null;
+    }
+    
+    async function copyAnalysisContent() {
+        if (!selectedAnalysisForViewId) return;
+
+        const titleElement = document.getElementById('analysisViewModalTitle');
+        const title = titleElement?.textContent.trim() || 'Sem título';
+
+        const dateElement = document.getElementById('analysisViewModalDate');
+        const createdAt = dateElement?.textContent.trim() || 'Desconhecida';
+
+        const contentDiv = document.getElementById('analysisViewModalContent');
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contentDiv.innerHTML;
+
+        tempDiv.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+
+        tempDiv.querySelectorAll('div').forEach(div => {
+            div.insertAdjacentText('beforeend', '\n');
+        });
+
+        const cleanText = tempDiv.textContent.trim();
+
+        const finalText = `*${title}*\n\n${cleanText}\n\nCriado em: ${createdAt}`;
+
+        try {
+            await navigator.clipboard.writeText(finalText);
+            alert('Análise copiada com sucesso!');
+        } catch (err) {
+            console.error('Falha ao copiar conteúdo: ', err);
+            alert('Não foi possível copiar a análise. Verifique as permissões do navegador.');
+        }
+    }
+
+
+
+    function openAnalysisCreateModal(id = null) {
+        currentAnalysisId = id;
+        const container = document.getElementById('analysisBlocksContainer');
+        container.innerHTML = '';
+        if (id) {
+            const analysis = analyses.find(a => a.id === id);
+            if (analysis) {
+                document.getElementById('analysisModalTitle').textContent = 'Editar Análise';
+                document.getElementById('analysisTitleInput').value = analysis.title;
+                analysis.blocks.forEach(block => addAnalysisBlock(block.content, block.id, block.sideNote));
+            }
+        } else {
+            document.getElementById('analysisModalTitle').textContent = 'Adicionar Nova Análise';
+            document.getElementById('analysisTitleInput').value = '';
+            addAnalysisBlock();
+        }
+        setupAnalysisBlockDragAndDrop();
+        document.getElementById('analysisEditModal').classList.add('show');
+    }
+
+    function closeAnalysisEditModal() {
+        document.getElementById('analysisEditModal').classList.remove('show');
+    }
+
+    function addAnalysisBlock(content = '', id = Date.now(), sideNote = '') {
+        const container = document.getElementById('analysisBlocksContainer');
+        const blockWrapper = document.createElement('div');
+        blockWrapper.className = 'block-wrapper';
+        blockWrapper.dataset.blockId = id;
+        blockWrapper.dataset.sidenote = sideNote; 
+
+        const paletteHTML = generateColorPaletteHTML("formatAnalysisBlock");
+        
+        const sideNoteClass = sideNote ? 'has-note' : '';
+
+        blockWrapper.innerHTML = `
+            <div class="block-toolbar">
+                <span class="drag-handle" draggable="true">☰</span>
+                <button class="toolbar-btn" onmousedown="event.preventDefault(); formatAnalysisBlock(this, 'bold')" title="Negrito"><strong>B</strong></button>
+                <button class="toolbar-btn" onmousedown="event.preventDefault(); formatAnalysisBlock(this, 'italic')" title="Itálico"><em>I</em></button>
+                <button class="toolbar-btn" onmousedown="event.preventDefault(); formatAnalysisBlock(this, 'underline')" title="Sublinhado"><u>U</u></button>
+                <button class="toolbar-btn" onmousedown="event.preventDefault(); formatAnalysisBlock(this, 'strikeThrough')" title="Riscado"><s>S</s></button>
+                ${paletteHTML}
+                <button class="toolbar-btn" onmousedown="event.preventDefault(); document.getElementById('analysisImageUpload-${id}').click()" title="Inserir Imagem">🖼️</button>
+                <input accept="image/*" type="file" onchange="insertAnalysisImage(this, ${id})" class="image-upload" id="analysisImageUpload-${id}">
+                <button class="toolbar-btn" onmousedown="event.preventDefault(); formatAnalysisBlock(this, 'createLink', prompt('URL do link:'))" title="Criar Link">🔗</button>
+                <button class="toolbar-btn danger" onclick="removeAnalysisBlock(this)" title="Remover Bloco">🗑️</button>
+                <button class="toolbar-btn side-note-btn ${sideNoteClass}" onclick="openSideNoteModal(this)" title="Anotação do Bloco">💬</button>
+            </div>
+            <div class="block-content-editor" contenteditable="true" data-id="${id}">${content}</div>
+        `;
+        container.appendChild(blockWrapper);
+    }
+    
+    function removeAnalysisBlock(buttonElement) {
+        if (document.querySelectorAll('.block-wrapper').length > 1) {
+            buttonElement.closest('.block-wrapper').remove();
+        } else {
+            alert('A análise precisa ter pelo menos um bloco.');
+        }
+    }
+
+    function setupAnalysisBlockDragAndDrop() {
+        const container = document.getElementById('analysisBlocksContainer');
+        let draggedBlock = null;
+        container.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('drag-handle')) {
+                draggedBlock = e.target.closest('.block-wrapper');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', draggedBlock.dataset.blockId);
+                setTimeout(() => { draggedBlock.classList.add('dragging'); }, 0);
+            }
+        });
+        container.addEventListener('dragend', () => {
+            if (draggedBlock) {
+                draggedBlock.classList.remove('dragging');
+                draggedBlock = null;
+            }
+        });
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const targetBlock = e.target.closest('.block-wrapper');
+            if (targetBlock && draggedBlock && targetBlock !== draggedBlock) {
+                const rect = targetBlock.getBoundingClientRect();
+                const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                container.insertBefore(draggedBlock, next ? targetBlock.nextSibling : targetBlock);
+            }
+        });
+    }
+
+    function saveAnalysis() {
+        const title = document.getElementById('analysisTitleInput').value.trim();
+        const blockElements = document.querySelectorAll('#analysisBlocksContainer .block-wrapper');
+        const blocks = Array.from(blockElements).map(wrapper => ({
+            id: parseInt(wrapper.querySelector('.block-content-editor').dataset.id),
+            content: wrapper.querySelector('.block-content-editor').innerHTML,
+            sideNote: wrapper.dataset.sidenote || ''
+        }));
+        if (!title || (blocks.length > 0 && blocks.every(b => !b.content.trim()))) {
+            alert('O título é obrigatório e pelo menos um bloco deve ter conteúdo.');
+            return;
+        }
+        if (currentAnalysisId) {
+            const analysisIndex = analyses.findIndex(a => a.id === currentAnalysisId);
+            if (analysisIndex !== -1) {
+                analyses[analysisIndex].title = title;
+                analyses[analysisIndex].blocks = blocks;
+            }
+        } else {
+            analyses.push({
+                id: Date.now(),
+                title: title,
+                blocks: blocks,
+                createdAt: new Date().toISOString()
+            });
+        }
+        localStorage.setItem('analyses', JSON.stringify(analyses));
+        renderAnalysisBlocks();
+        closeAnalysisEditModal();
+    }
+    
+    function deleteAnalysis(id) {
+        if (confirm('Tem certeza que deseja deletar esta análise?')) {
+            analyses = analyses.filter(a => a.id !== id);
+            localStorage.setItem('analyses', JSON.stringify(analyses));
+            renderAnalysisBlocks();
+        }
+    }
+
+    function renderAnalysisBlocks() {
+        const list = document.getElementById('analysisList');
+        list.innerHTML = '';
+        analyses.forEach(analysis => {
+            const card = document.createElement('div');
+            card.className = 'analysis-card';
+            const previewContent = analysis.blocks.map(b => b.content).join('<hr style="border-top:1px dashed #ccc; margin:1rem 0; border-bottom:none;">');
+            card.innerHTML = `
+                <div class="analysis-header">
+                    <h3 class="analysis-title">${analysis.title}</h3>
+                    <div class="analysis-actions">
+                        <button class="btn-icon" onclick="viewAnalysis(${analysis.id})" title="Visualizar">👁️</button>
+                        <button class="btn-icon" onclick="openAnalysisCreateModal(${analysis.id})" title="Editar">✏️</button>
+                        <button class="btn-icon danger" onclick="deleteAnalysis(${analysis.id})" title="Deletar">🗑️</button>
+                    </div>
+                </div>
+                <div class="analysis-content">${previewContent}</div>
+                <div class="note-meta" style="margin-top:1rem;">
+                    <span>Criado: ${new Date(analysis.createdAt).toLocaleDateString()}</span>
+                </div>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    function openAnalysisExportModal(format) {
+        const modal = document.getElementById('analysisExportModal');
+        const title = document.getElementById('analysisExportModalTitle');
+        const list = document.getElementById('analysisExportOptionsList');
+        const btn = document.getElementById('confirmAnalysisExportBtn');
+        const selectAllContainer = document.getElementById('selectAllContainer');
+
+        title.textContent = `Exportar Análises para ${format.toUpperCase()}`;
+        
+        selectAllContainer.innerHTML = `
+            <label>
+                <span><strong>Selecionar Todas</strong></span>
+                <input type="checkbox" onchange="toggleAllAnalysesForExport(this.checked)">
+            </label>
+        `;
+
+        list.innerHTML = '';
+        if (analyses.length === 0) {
+            list.innerHTML = '<p>Nenhuma análise para exportar.</p>';
+        } else {
+            analyses.forEach(analysis => {
+                list.innerHTML += `
+                    <label>
+                        <span>${analysis.title}</span>
+                        <input type="checkbox" class="analysis-export-item" value="${analysis.id}">
+                    </label>
+                `;
+            });
+        }
+        
+        btn.onclick = () => exportAnalyses(format);
+        modal.classList.add('show');
+    }
+
+    function closeAnalysisExportModal() {
+        document.getElementById('analysisExportModal').classList.remove('show');
+    }
+    
+    function toggleAllAnalysesForExport(checked) {
+        document.querySelectorAll('.analysis-export-item').forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+    }
+
+    // --- PDF EXPORT REFACTORED ---
+    async function resizeImageSrc(originalSrc, maxWidth) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => {
+                let width = image.width;
+                let height = image.height;
+
+                if (width > maxWidth) {
+                    height = (maxWidth / width) * height;
+                    width = maxWidth;
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(image, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.75));
+            };
+            image.onerror = reject;
+            image.src = originalSrc;
+        });
+    }
+
+    function addCanvasSlicesToPdf(doc, canvas, currentY, margin, usableWidth) {
+        const pageHeight = doc.internal.pageSize.height;
+        let y = currentY;
+        let canvasHeightLeft = canvas.height;
+        let canvasY = 0;
+
+        while (canvasHeightLeft > 0) {
+            let spaceLeftOnPage = pageHeight - y - margin;
+            if (spaceLeftOnPage <= 1) {
+                doc.addPage();
+                y = margin;
+                spaceLeftOnPage = pageHeight - y - margin;
+            }
+
+            const pdfToCanvasRatio = canvas.width / usableWidth;
+            const heightToDrawInPixels = Math.min(canvasHeightLeft, spaceLeftOnPage * pdfToCanvasRatio);
+            if (heightToDrawInPixels <= 0) break;
+
+            const heightToDrawInMm = heightToDrawInPixels / pdfToCanvasRatio;
+            const sliceCanvas = document.createElement('canvas');
+            sliceCanvas.width = canvas.width;
+            sliceCanvas.height = heightToDrawInPixels;
+            const sliceCtx = sliceCanvas.getContext('2d');
+
+            sliceCtx.drawImage(canvas, 0, canvasY, canvas.width, heightToDrawInPixels, 0, 0, canvas.width, heightToDrawInPixels);
+            
+            const sliceImgData = sliceCanvas.toDataURL('image/jpeg', 0.9);
+            doc.addImage(sliceImgData, 'JPEG', margin, y, usableWidth, heightToDrawInMm);
+
+            y += heightToDrawInMm;
+            canvasY += heightToDrawInPixels;
+            canvasHeightLeft -= heightToDrawInPixels;
+        }
+        return y;
+    }
+
+    async function exportAnalyses(format) {
+        const selectedIds = Array.from(document.querySelectorAll('.analysis-export-item:checked')).map(cb => parseInt(cb.value));
+        const analysesToExport = analyses.filter(a => selectedIds.includes(a.id));
+
+        if (analysesToExport.length === 0) {
+            alert("Nenhuma análise selecionada para exportar.");
+            return;
+        }
+
+        if (format === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            
+            const margin = 15;
+            const usableWidth = doc.internal.pageSize.width - margin * 2;
+            const pageHeight = doc.internal.pageSize.height;
+            let y = margin;
+
+            const renderHtmlBuffer = async (htmlBuffer) => {
+                if (htmlBuffer.trim() === '') return y;
+                const tempDiv = document.createElement('div');
+                tempDiv.className = 'pdf-export-content';
+                tempDiv.style.width = `${usableWidth}mm`;
+                tempDiv.innerHTML = htmlBuffer;
+                document.body.appendChild(tempDiv);
+                
+                try {
+                    const canvas = await html2canvas(tempDiv, { scale: 2, useCORS: true, logging: false });
+                    y = addCanvasSlicesToPdf(doc, canvas, y, margin, usableWidth);
+                } catch (error) {
+                    console.error("html2canvas falhou para o bloco de texto:", error);
+                    if ((pageHeight - y - margin) < 10) { doc.addPage(); y = margin; }
+                    doc.setTextColor(255, 0, 0).text('[Erro ao renderizar bloco de texto]', margin, y).setTextColor(0);
+                    y += 10;
+                } finally {
+                    document.body.removeChild(tempDiv);
+                }
+                return y;
+            };
+
+            for (let i = 0; i < analysesToExport.length; i++) {
+                const analysis = analysesToExport[i];
+                if (i > 0 && y > pageHeight - 40) {
+                    doc.addPage(); y = margin;
+                }
+
+                doc.setFontSize(16);
+                const titleLines = doc.splitTextToSize(analysis.title, usableWidth);
+                doc.text(titleLines, margin, y);
+                y += (titleLines.length * 7);
+
+                doc.setFontSize(10).setTextColor(100);
+                doc.text(`Criado em: ${new Date(analysis.createdAt).toLocaleDateString()}`, margin, y);
+                y += 10;
+                doc.setTextColor(0);
+
+                for (const block of analysis.blocks) {
+                    if ((pageHeight - y - margin) < 25 && y > margin) {
+                        doc.addPage(); y = margin;
+                    }
+                    doc.setDrawColor(220).line(margin, y, margin + usableWidth, y);
+                    y += 5;
+
+                    const tempParser = document.createElement('div');
+                    tempParser.innerHTML = block.content;
+                    const nodes = Array.from(tempParser.childNodes);
+                    let htmlBuffer = '';
+
+                    for (const node of nodes) {
+                        if (node.nodeName === 'IMG' && node.src && node.src.startsWith('data:image')) {
+                            y = await renderHtmlBuffer(htmlBuffer);
+                            htmlBuffer = '';
+
+                            try {
+                                const resizedSrc = await resizeImageSrc(node.src, 800);
+                                const imageElement = new Image();
+                                imageElement.src = resizedSrc;
+                                await new Promise(resolve => { imageElement.onload = resolve; });
+                                
+                                const imgCanvas = document.createElement('canvas');
+                                imgCanvas.width = imageElement.width;
+                                imgCanvas.height = imageElement.height;
+                                imgCanvas.getContext('2d').drawImage(imageElement, 0, 0);
+                                y = addCanvasSlicesToPdf(doc, imgCanvas, y, margin, usableWidth);
+
+                            } catch (e) {
+                                console.error("Falha ao processar e adicionar imagem:", e);
+                                if ((pageHeight - y - margin) < 10) { doc.addPage(); y = margin; }
+                                doc.setTextColor(255, 0, 0).text('[Erro ao renderizar imagem]', margin, y).setTextColor(0);
+                                y += 10;
+                            }
+                        } else {
+                            htmlBuffer += node.outerHTML || node.textContent;
+                        }
+                    }
+                    y = await renderHtmlBuffer(htmlBuffer);
+                    y += 5;
+                }
+                y += 10;
+            }
+            doc.save('analises.pdf');
+
+        } else if (format === 'json') {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(analysesToExport));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = "analises.json";
+            a.click();
+        }
+        closeAnalysisExportModal();
+    }
+    
+    function importAnalysesJSON() {
+        const file = document.getElementById('importAnalysesFile').files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedData = JSON.parse(e.target.result);
+                if (!Array.isArray(importedData)) throw new Error("O arquivo JSON não é um array válido.");
+                
+                const existingIds = new Set(analyses.map(a => a.id));
+                const newAnalyses = importedData.map(analysis => ({
+                    id: !analysis.id || existingIds.has(analysis.id) ? Date.now() + Math.random() : analysis.id,
+                    title: analysis.title || "Análise Importada",
+                    blocks: analysis.blocks && analysis.blocks.length > 0 ? analysis.blocks : [{ id: Date.now(), content: "" }],
+                    createdAt: analysis.createdAt || new Date().toISOString()
+                }));
+                
+                analyses.push(...newAnalyses);
+                localStorage.setItem('analyses', JSON.stringify(analyses));
+                renderAnalysisBlocks();
+                alert(`${newAnalyses.length} análise(s) importada(s) com sucesso!`);
+            } catch (error) {
+                alert('Erro ao importar arquivo: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    function insertAnalysisImage(input, blockId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                const targetEditor = document.querySelector(`.block-content-editor[data-id="${blockId}"]`);
+                if (targetEditor) {
+                    targetEditor.focus();
+                    document.execCommand('insertHTML', false, img.outerHTML);
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function setupFilters() {
+        const allFilterInputs = document.querySelectorAll('.keyword-filter');
+        const allGroupFilters = document.querySelectorAll('.group-filter');
+
+        allFilterInputs.forEach(input => input.addEventListener('input', renderColumns));
+        allGroupFilters.forEach(select => select.addEventListener('change', renderColumns));
+    }
+    
+    function selectNoteColor(color) {
+        document.querySelectorAll('.color-palette .color-option').forEach(o => o.classList.remove('active'));
+        const selected = document.querySelector(`.color-palette .color-option[data-color="${color}"]`);
+        if (selected) selected.classList.add('active');
+    }
+
+    function formatText(command, value) {
+        document.getElementById('modalContentEditor').focus();
+        document.execCommand(command, false, value);
+    }
+
+    function changeTextSize(size) {
+        formatText('fontSize', '7');
+        const fontElements = document.getElementById('modalContentEditor').querySelectorAll('font[size="7"]');
+        fontElements.forEach(fontEl => {
+            fontEl.removeAttribute('size');
+            fontEl.style.fontSize = size;
+        });
+    }
+    
+    function insertImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                formatText('insertImage', e.target.result);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function openImageResizeModal(imgElement) {
+        if (!imgElement) return;
+        imageToResize = imgElement;
+        document.getElementById('imageWidthInput').value = imageToResize.clientWidth;
+        document.getElementById('imageResizeModal').classList.add('show');
+    }
+
+    function closeImageResizeModal() {
+        document.getElementById('imageResizeModal').classList.remove('show');
+        imageToResize = null;
+    }
+
+    function applyImageResize() {
+        if (!imageToResize) return;
+
+        const widthInput = document.getElementById('imageWidthInput');
+        const newWidth = parseInt(widthInput.value, 10);
+
+        if (isNaN(newWidth) || newWidth <= 0) {
+            alert("Por favor, insira um valor de largura válido.");
+            return;
+        }
+
+        const maintainAspectRatio = document.getElementById('aspectRatioToggle').checked;
+
+        if (maintainAspectRatio) {
+            const ratio = imageToResize.naturalHeight / imageToResize.naturalWidth;
+            const newHeight = newWidth * ratio;
+            imageToResize.style.width = newWidth + 'px';
+            imageToResize.style.height = newHeight + 'px';
+        } else {
+            imageToResize.style.width = newWidth + 'px';
+            imageToResize.style.height = 'auto';
+        }
+
+        closeImageResizeModal();
+    }
+    
+    function setupImageToggling() {
+        document.body.addEventListener('click', (event) => {
+            if (event.target.tagName === 'IMG' && event.target.closest('.rich-editor, .block-content-editor')) {
+                event.preventDefault();
+                openImageResizeModal(event.target);
+            }
+        });
+    }
+
+    function updateStats() {
+        let totalActive = notes.filter(n => n.status !== 'completed').length;
+        let totalCompleted = notes.length - totalActive;
+        let groups = new Set(notes.map(note => note.group).filter(Boolean));
+        
+        document.querySelector('.stats-container-desktop #totalNotesCountDesktop').textContent = notes.length;
+        document.querySelector('.stats-container-desktop #activeNotesCountDesktop').textContent = totalActive;
+        document.querySelector('.stats-container-desktop #completedNotesCountDesktop').textContent = totalCompleted;
+        document.querySelector('.stats-container-desktop #groupsCountDesktop').textContent = groups.size;
+        
+        document.querySelector('#statsContent #totalNotesCountDesktop').textContent = notes.length;
+        document.querySelector('#statsContent #activeNotesCountDesktop').textContent = totalActive;
+        document.querySelector('#statsContent #completedNotesCountDesktop').textContent = totalCompleted;
+        document.querySelector('#statsContent #groupsCountDesktop').textContent = groups.size;
+        
+    }
+
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const themeSelector = document.getElementById('themeSelector');
+    darkModeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    });
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+    themeSelector.addEventListener('change', (event) => {
+        const selectedTheme = event.target.value;
+        document.body.className = document.body.className.replace(/theme-\w+/g, '').trim();
+        if (selectedTheme) {
+            document.body.classList.add(selectedTheme);
+        }
+        localStorage.setItem('selectedTheme', selectedTheme);
+    });
+    const savedTheme = localStorage.getItem('selectedTheme');
+    if (savedTheme) {
+        document.body.classList.add(savedTheme);
+        themeSelector.value = savedTheme;
+    }
+
+    function toggleCollapsible(contentId) {
+        const content = document.getElementById(contentId);
+        const header = content.previousElementSibling;
+        content.classList.toggle('show');
+        header.classList.toggle('open');
+    }
+
+    function openSideNoteModal(buttonElement) {
+        const blockWrapper = buttonElement.closest('.block-wrapper');
+        const blockId = blockWrapper.dataset.blockId;
+        const currentNote = blockWrapper.dataset.sidenote || '';
+        
+        document.getElementById('sideNoteBlockId').value = blockId;
+        document.getElementById('sideNoteTextarea').value = currentNote;
+        
+        document.getElementById('sideNoteModal').classList.add('show');
+        document.getElementById('sideNoteTextarea').focus();
+    }
+
+    function closeSideNoteModal() {
+        document.getElementById('sideNoteModal').classList.remove('show');
+    }
+
+    function saveSideNote() {
+        const blockId = document.getElementById('sideNoteBlockId').value;
+        const noteText = document.getElementById('sideNoteTextarea').value;
+        
+        const blockWrapper = document.querySelector(`.block-wrapper[data-block-id="${blockId}"]`);
+        if (blockWrapper) {
+            blockWrapper.dataset.sidenote = noteText;
+            
+            const noteButton = blockWrapper.querySelector('.side-note-btn');
+            if (noteText.trim()) {
+                noteButton.classList.add('has-note');
+            } else {
+                noteButton.classList.remove('has-note');
+            }
+        }
+        
+        closeSideNoteModal();
+    }
+    
+    function deleteSideNote() {
+        if (confirm('Tem certeza que deseja excluir esta anotação?')) {
+            const blockId = document.getElementById('sideNoteBlockId').value;
+            document.getElementById('sideNoteTextarea').value = ''; // Limpa a área de texto
+            saveSideNote(); // Salva o estado vazio
+        }
+    }
+
+  </script>
+ </body>
+</html>
