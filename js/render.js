@@ -2,7 +2,7 @@
    RENDER — Renderização de colunas, estatísticas, filtros
    ============================================ */
 
-import state, { saveNotes } from './state.js';
+import state, { saveNotes, upsertNote } from './state.js';
 import { COLUMN_STATUS_MAP } from './utils.js';
 
 const COLUMN_IDS = Object.values(COLUMN_STATUS_MAP);
@@ -260,6 +260,7 @@ export function setupColumns() {
             if (noteIndex !== -1) {
                 state.notes[noteIndex].status = columnId;
                 saveNotes();
+                upsertNote(state.notes[noteIndex]);
                 renderColumns();
             }
             document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-zone'));

@@ -2,6 +2,61 @@
    LAYOUT — Header, controles, colunas, estatísticas
    ============================================ */
 
+/* === APP LOADING === */
+
+.app-loading {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-light);
+    z-index: 9999;
+}
+
+.dark-mode .app-loading {
+    background: var(--bg-dark);
+}
+
+.app-loading-inner {
+    text-align: center;
+    color: var(--text-muted-light);
+}
+
+.dark-mode .app-loading-inner {
+    color: var(--text-muted-dark);
+}
+
+.app-loading-emoji {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: var(--spacing-md);
+}
+
+.app-loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: appSpin 0.7s linear infinite;
+    margin: 0 auto var(--spacing-sm);
+}
+
+.dark-mode .app-loading-spinner {
+    border-color: var(--border-dark);
+    border-top-color: var(--primary);
+}
+
+@keyframes appSpin {
+    to { transform: rotate(360deg); }
+}
+
+.app-loading-inner p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
 /* === HEADER === */
 
 .header {
@@ -62,6 +117,61 @@
 
 .theme-toggle-group button:hover {
     background: var(--primary-soft);
+    transform: none;
+    box-shadow: none;
+}
+
+/* === USER PROFILE === */
+
+.user-profile-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1.5px solid var(--border-light);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-light);
+}
+
+.dark-mode .user-profile-group {
+    border-color: var(--border-dark);
+    background: var(--surface-dark);
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary);
+}
+
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-light);
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dark-mode .user-name {
+    color: var(--text-dark);
+}
+
+.user-profile-group button {
+    margin: 0;
+    padding: 0.3rem 0.5rem;
+    min-width: auto;
+    min-height: auto;
+    background: transparent;
+    box-shadow: none;
+    font-size: 1rem;
+}
+
+.user-profile-group button:hover {
+    background: rgba(239, 68, 68, 0.1);
     transform: none;
     box-shadow: none;
 }

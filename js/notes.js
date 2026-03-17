@@ -2,7 +2,7 @@
    NOTES — CRUD de notas, visualização, compartilhamento
    ============================================ */
 
-import state, { saveNotes } from './state.js';
+import state, { saveNotes, upsertNote, removeNote } from './state.js';
 import { renderColumns, updateStats } from './render.js';
 import { selectNoteColor } from './editor.js';
 
@@ -47,17 +47,20 @@ export function saveNote() {
             note.content = content;
             note.group = group;
             note.color = color;
+            upsertNote(note);
         }
     } else {
-        state.notes.push({
-            id: Date.now(),
+        const newNote = {
+            id: crypto.randomUUID(),
             title,
             content,
             group,
             color,
             status: 'to-do',
             createdAt: new Date().toISOString()
-        });
+        };
+        state.notes.push(newNote);
+        upsertNote(newNote);
     }
 
     saveNotes();
@@ -110,6 +113,7 @@ export function toggleComplete(id) {
     if (note) {
         note.status = note.status === 'completed' ? 'to-do' : 'completed';
         saveNotes();
+        upsertNote(note);
         renderColumns();
     }
 }
@@ -121,6 +125,7 @@ export function deleteNote(id) {
     if (confirm('Tem certeza que deseja excluir esta nota? A ação não poderá ser desfeita.')) {
         state.notes = state.notes.filter(n => n.id !== id);
         saveNotes();
+        removeNote(id);
         renderColumns();
     }
 }

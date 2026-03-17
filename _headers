@@ -1,0 +1,10 @@
+/*
+  Security headers for Netlify
+  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers
+*/
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block

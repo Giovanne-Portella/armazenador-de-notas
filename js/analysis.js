@@ -2,7 +2,7 @@
    ANALYSIS — Painel de análises, CRUD, blocos, side notes
    ============================================ */
 
-import state, { saveAnalyses } from './state.js';
+import state, { saveAnalyses, upsertAnalysis, removeAnalysis } from './state.js';
 import { generateColorPaletteHTML } from './utils.js';
 
 /**
@@ -38,9 +38,9 @@ export function renderAnalysisBlocks() {
             <div class="analysis-header">
                 <h3 class="analysis-title">${analysis.title}</h3>
                 <div class="analysis-actions">
-                    <button class="btn-icon" onclick="window.viewAnalysis(${analysis.id})" title="Visualizar">👁️</button>
-                    <button class="btn-icon" onclick="window.openAnalysisCreateModal(${analysis.id})" title="Editar">✏️</button>
-                    <button class="btn-icon danger" onclick="window.deleteAnalysis(${analysis.id})" title="Deletar">🗑️</button>
+                    <button class="btn-icon" onclick="window.viewAnalysis('${analysis.id}')" title="Visualizar">👁️</button>
+                    <button class="btn-icon" onclick="window.openAnalysisCreateModal('${analysis.id}')" title="Editar">✏️</button>
+                    <button class="btn-icon danger" onclick="window.deleteAnalysis('${analysis.id}')" title="Deletar">🗑️</button>
                 </div>
             </div>
             <div class="analysis-content">${previewContent}</div>
@@ -232,14 +232,17 @@ export function saveAnalysis() {
         if (idx !== -1) {
             state.analyses[idx].title = title;
             state.analyses[idx].blocks = blocks;
+            upsertAnalysis(state.analyses[idx]);
         }
     } else {
-        state.analyses.push({
-            id: Date.now(),
+        const newAnalysis = {
+            id: crypto.randomUUID(),
             title,
             blocks,
             createdAt: new Date().toISOString()
-        });
+        };
+        state.analyses.push(newAnalysis);
+        upsertAnalysis(newAnalysis);
     }
 
     saveAnalyses();
@@ -254,6 +257,7 @@ export function deleteAnalysis(id) {
     if (confirm('Tem certeza que deseja deletar esta análise?')) {
         state.analyses = state.analyses.filter(a => a.id !== id);
         saveAnalyses();
+        removeAnalysis(id);
         renderAnalysisBlocks();
     }
 }

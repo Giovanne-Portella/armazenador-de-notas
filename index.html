@@ -23,6 +23,25 @@
 </head>
 <body>
 
+    <!-- Aplica dark mode antes de renderizar (evita flash branco) -->
+    <script>
+        if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+        var st = localStorage.getItem('selectedTheme');
+        if (st) document.body.classList.add(st);
+    </script>
+
+    <!-- ========== LOADING (enquanto verifica auth e carrega dados) ========== -->
+    <div id="appLoading" class="app-loading">
+        <div class="app-loading-inner">
+            <span class="app-loading-emoji">📝</span>
+            <div class="app-loading-spinner"></div>
+            <p>Carregando...</p>
+        </div>
+    </div>
+
+    <!-- ========== CONTEÚDO DO APP (oculto até autenticar) ========== -->
+    <div id="appContent" style="display: none;">
+
     <!-- ========== HEADER ========== -->
     <header class="header">
         <h1>📝 Tarefas &amp; Análises</h1>
@@ -37,6 +56,11 @@
                     <option value="theme-purple">Tema Roxo</option>
                 </select>
                 <button class="btn-icon" id="darkModeToggle" title="Alternar modo escuro">🌙</button>
+            </div>
+            <div class="user-profile-group">
+                <img id="userAvatar" class="user-avatar" alt="Avatar" />
+                <span id="userName" class="user-name"></span>
+                <button class="btn-icon" onclick="signOut()" title="Sair">🚪</button>
             </div>
         </div>
     </header>
@@ -391,6 +415,8 @@
             </div>
         </div>
     </div>
+
+    </div> <!-- /appContent -->
 
     <!-- ========== JS MODULAR (ES Modules) ========== -->
     <script type="module" src="js/app.js"></script>

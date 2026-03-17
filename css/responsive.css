@@ -73,7 +73,42 @@
         border-color: var(--border-dark);
     }
 
-    /* === AÇÕES RÁPIDAS MOBILE — Pill buttons === */
+    /* === USER PROFILE MOBILE === */
+
+    .user-profile-group {
+        padding: 0;
+        border: none;
+        background: transparent;
+        gap: 0.25rem;
+    }
+
+    .user-name {
+        display: none;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    .user-profile-group button {
+        font-size: 1.1rem;
+        padding: 0.3rem;
+        border-radius: 50%;
+        background: var(--surface-light);
+        border: 1.5px solid var(--border-light);
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    .dark-mode .user-profile-group button {
+        background: var(--surface-dark);
+        border-color: var(--border-dark);
+    }
+
+    /* === AÇÕES RÁPIDAS MOBILE === */
 
     .mobile-actions {
         display: flex;

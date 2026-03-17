@@ -2,7 +2,7 @@
    EXPORT — Exportação/Importação de notas e análises (PDF, JSON)
    ============================================ */
 
-import state, { saveNotes, saveAnalyses } from './state.js';
+import state, { saveNotes, saveAnalyses, bulkInsertNotes, bulkInsertAnalyses } from './state.js';
 import { renderColumns } from './render.js';
 import { renderAnalysisBlocks } from './analysis.js';
 
@@ -182,9 +182,8 @@ export function importJSON(inputElement) {
             const importedData = JSON.parse(e.target.result);
             if (!Array.isArray(importedData)) throw new Error('O arquivo JSON não é um array válido.');
 
-            const existingIds = new Set(state.notes.map(n => n.id));
             const newNotes = importedData.map(note => ({
-                id: (!note.id || existingIds.has(note.id)) ? Date.now() + Math.random() : note.id,
+                id: crypto.randomUUID(),
                 title: note.title || 'Sem Título',
                 content: note.content || '',
                 group: note.group || '',
@@ -195,6 +194,7 @@ export function importJSON(inputElement) {
 
             state.notes.push(...newNotes);
             saveNotes();
+            bulkInsertNotes(newNotes);
             renderColumns();
             alert(`${newNotes.length} nota(s) importada(s) com sucesso!`);
         } catch (error) {
@@ -313,7 +313,7 @@ function addCanvasSlicesToPdf(doc, canvas, currentY, margin, usableWidth) {
 
 export async function exportAnalyses(format) {
     const selectedIds = Array.from(document.querySelectorAll('.analysis-export-item:checked'))
-        .map(cb => parseInt(cb.value));
+        .map(cb => cb.value);
     const analysesToExport = state.analyses.filter(a => selectedIds.includes(a.id));
 
     if (analysesToExport.length === 0) {
@@ -431,9 +431,8 @@ export function importAnalysesJSON() {
             const importedData = JSON.parse(e.target.result);
             if (!Array.isArray(importedData)) throw new Error('O arquivo JSON não é um array válido.');
 
-            const existingIds = new Set(state.analyses.map(a => a.id));
             const newAnalyses = importedData.map(analysis => ({
-                id: (!analysis.id || existingIds.has(analysis.id)) ? Date.now() + Math.random() : analysis.id,
+                id: crypto.randomUUID(),
                 title: analysis.title || 'Análise Importada',
                 blocks: analysis.blocks && analysis.blocks.length > 0 ? analysis.blocks : [{ id: Date.now(), content: '' }],
                 createdAt: analysis.createdAt || new Date().toISOString()
@@ -441,6 +440,7 @@ export function importAnalysesJSON() {
 
             state.analyses.push(...newAnalyses);
             saveAnalyses();
+            bulkInsertAnalyses(newAnalyses);
             renderAnalysisBlocks();
             alert(`${newAnalyses.length} análise(s) importada(s) com sucesso!`);
         } catch (error) {

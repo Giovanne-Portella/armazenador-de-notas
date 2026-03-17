@@ -4,6 +4,7 @@
 
 import { loadState } from './state.js';
 import { initTheme } from './theme.js';
+import { requireAuth, signOut, onAuthStateChange } from './auth.js';
 import { toggleCollapsible, generateColorPaletteHTML } from './utils.js';
 import {
     formatText, applyTextColor, formatAnalysisBlock,
@@ -93,12 +94,22 @@ window.importAnalysesJSON = importAnalysesJSON;
 // Utils
 window.toggleCollapsible = toggleCollapsible;
 
+// Auth
+window.signOut = signOut;
+
 /* =========================================
    Inicialização
    ========================================= */
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadState();
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar autenticação
+    const session = await requireAuth();
+    if (!session) return;
+
+    // Carregar dados do Supabase
+    await loadState();
+
+    // Inicializar UI
     initTheme();
     setupDesktopUI();
     setupMobileUI();
@@ -108,7 +119,40 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFilters();
     setupImageToggling();
 
+    // Configurar perfil do usuário
+    setupUserProfile(session);
+
     // Paleta de cores do editor de notas
     document.getElementById('noteTextColorPalette').innerHTML =
         generateColorPaletteHTML('applyTextColor');
+
+    // Esconder loading, mostrar app
+    const loading = document.getElementById('appLoading');
+    const appContent = document.getElementById('appContent');
+    if (loading) loading.style.display = 'none';
+    if (appContent) appContent.style.display = '';
+
+    // Listener para sessão expirada
+    onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
+            window.location.href = '/login.html';
+        }
+    });
 });
+
+/**
+ * Configura avatar e dados do usuário no header
+ */
+function setupUserProfile(session) {
+    const user = session.user;
+    const avatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+
+    if (avatar && user.user_metadata?.avatar_url) {
+        avatar.src = user.user_metadata.avatar_url;
+        avatar.alt = user.user_metadata.full_name || 'Avatar';
+    }
+    if (userName) {
+        userName.textContent = user.user_metadata?.full_name || user.email || '';
+    }
+}
