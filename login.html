@@ -46,6 +46,7 @@
     </div>
 
     <script type="module">
+        import { supabase } from './js/supabase.js';
         import { signInWithGoogle, getSession } from './js/auth.js';
 
         // Aplica dark mode salvo
@@ -54,6 +55,21 @@
         }
         const savedTheme = localStorage.getItem('selectedTheme');
         if (savedTheme) document.body.classList.add(savedTheme);
+
+        // Detecta login concluído (redirect OAuth ou login externo)
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                window.location.href = '/';
+            }
+        });
+
+        // Quando o app volta ao foco (ex: usuário logou no browser externo)
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible') {
+                const session = await getSession();
+                if (session) window.location.href = '/';
+            }
+        });
 
         // Se já logado, redireciona para o app
         async function init() {

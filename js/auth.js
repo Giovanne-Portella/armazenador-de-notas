@@ -15,25 +15,20 @@ function isMedianApp() {
 
 /**
  * Login nativo Google via Median.co JavaScript Bridge
- * O Median espera callback como STRING (nome de função global),
- * não como função anônima — o bridge nativo serializa os params.
  */
 function medianGoogleLogin() {
     return new Promise((resolve, reject) => {
         const bridge = window.median || window.gonative;
         if (!bridge) return reject(new Error('Bridge não disponível'));
 
-        // Timeout de segurança — se em 60s não retornar, rejeita
         const timeout = setTimeout(() => {
             delete window._medianGoogleCallback;
             reject(new Error('Timeout: login nativo não respondeu em 60s'));
         }, 60000);
 
-        // Registra callback GLOBAL com nome fixo (Median exige string)
         window._medianGoogleCallback = function(result) {
             clearTimeout(timeout);
             delete window._medianGoogleCallback;
-
             console.log('[Median] Callback recebido:', JSON.stringify(result));
 
             if (!result) return reject(new Error('Resultado vazio'));
@@ -46,11 +41,7 @@ function medianGoogleLogin() {
             } else if (accessToken) {
                 resolve({ idToken: null, accessToken, result });
             } else if (result.error) {
-                let msg = result.error;
-                if (msg.toLowerCase().includes('cancel')) {
-                    msg = 'Login cancelado pelo Android. Configure o Web Client ID do Google no painel Median.co → Plugins → Social Login → Google.';
-                }
-                reject(new Error(msg));
+                reject(new Error(result.error));
             } else {
                 reject(new Error('Sem token: ' + JSON.stringify(result)));
             }
@@ -62,12 +53,9 @@ function medianGoogleLogin() {
             'auth:', !!bridge.auth
         );
 
-        // Chama o bridge passando callback como STRING
         if (bridge.socialLogin?.google?.login) {
-            console.log('[Median] Chamando socialLogin.google.login...');
             bridge.socialLogin.google.login({ callback: '_medianGoogleCallback' });
         } else if (bridge.auth?.google) {
-            console.log('[Median] Chamando auth.google...');
             bridge.auth.google({ callback: '_medianGoogleCallback' });
         } else {
             clearTimeout(timeout);
@@ -78,15 +66,25 @@ function medianGoogleLogin() {
 }
 
 /**
+ * Faz OAuth redirect via Supabase (funciona em browser e como fallback)
+ */
+async function oauthRedirect() {
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+    });
+    if (error) {
+        showToast('Erro ao fazer login: ' + error.message, 'error');
+    }
+}
+
+/**
  * Login com Google — detecta ambiente e escolhe o fluxo:
- *   • Median app → login nativo + signInWithIdToken (sem redirect)
+ *   • Median app → tenta nativo, se falhar cai para OAuth redirect
  *   • Browser normal → OAuth redirect padrão
  */
 export async function signInWithGoogle() {
-    console.log('[Auth] isMedianApp:', isMedianApp(),
-        'window.median:', !!window.median,
-        'window.gonative:', !!window.gonative
-    );
+    console.log('[Auth] isMedianApp:', isMedianApp());
 
     // Fluxo nativo para app Median.co
     if (isMedianApp()) {
@@ -114,24 +112,17 @@ export async function signInWithGoogle() {
 
             showToast('Login realizado!', 'success');
             window.location.href = '/';
+            return;
         } catch (e) {
-            console.error('[Auth] Login Median falhou:', e);
-            showToast('Erro no login: ' + e.message, 'error');
+            console.error('[Auth] Login nativo falhou:', e.message);
+            // Fallback: tenta OAuth redirect
+            console.log('[Auth] Fallback para OAuth redirect...');
+            showToast('Abrindo login no navegador...', 'info');
         }
-        return;
     }
 
-    // Fluxo padrão para browser (não é Median)
-    const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-            redirectTo: window.location.origin
-        }
-    });
-
-    if (error) {
-        showToast('Erro ao fazer login: ' + error.message, 'error');
-    }
+    // OAuth redirect (padrão ou fallback do nativo)
+    await oauthRedirect();
 }
 
 /**
