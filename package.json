@@ -1,0 +1,8 @@
+{
+  "name": "armazenador-de-notas",
+  "private": true,
+  "dependencies": {
+    "web-push": "^3.6.7",
+    "@supabase/supabase-js": "^2.49.0"
+  }
+}
