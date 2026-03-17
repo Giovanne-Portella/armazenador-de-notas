@@ -33,6 +33,7 @@ import {
     openAnalysisExportModal, closeAnalysisExportModal,
     toggleAllAnalysesForExport, exportAnalyses
 } from './export.js';
+import { initPushNotifications } from './push.js';
 
 /* =========================================
    Registrar funções globais para HTML onclick
@@ -256,12 +257,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Solicitar permissão de notificação
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
+    // Registrar Service Worker + Push Notifications
+    initPushNotifications();
 
-    // Verificar lembretes a cada 30s
+    // Verificar lembretes a cada 30s (notificação in-app)
     checkReminders();
     setInterval(checkReminders, 30000);
 });
