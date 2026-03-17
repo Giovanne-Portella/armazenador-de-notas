@@ -628,3 +628,32 @@
         padding: var(--spacing-sm) var(--spacing-md);
     }
 }
+
+/* === Mobile adjustments for new components === */
+
+@media (max-width: 768px) {
+    .toast-container {
+        top: auto;
+        bottom: 4.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+    }
+
+    .toast {
+        max-width: 100%;
+        font-size: 0.85rem;
+    }
+
+    .add-column-card {
+        min-width: 200px;
+    }
+
+    .reminder-section {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .reminder-datetime {
+        width: 100%;
+    }
+}

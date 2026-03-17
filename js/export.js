@@ -1,13 +1,14 @@
 /* ============================================
-   EXPORT — Exportação/Importação de notas e análises (PDF, JSON)
+   EXPORT — Exportação de notas e análises (PDF)
    ============================================ */
 
-import state, { saveNotes, saveAnalyses, bulkInsertNotes, bulkInsertAnalyses } from './state.js';
+import state, { saveNotes, saveAnalyses, bulkInsertAnalyses } from './state.js';
 import { renderColumns } from './render.js';
 import { renderAnalysisBlocks } from './analysis.js';
+import { showToast } from './utils.js';
 
 /* =========================================
-   NOTAS — PDF Export
+   NOTAS — PDF Export (melhorado e customizável)
    ========================================= */
 
 export function showPDFExportModal() {
@@ -18,29 +19,41 @@ export function showPDFExportModal() {
     let groupOptionsHTML = '';
     groups.forEach(g => { groupOptionsHTML += `<option value="${g}">${g}</option>`; });
 
+    // Colunas dinâmicas para filtro
+    let columnOptionsHTML = '';
+    state.columns.forEach(c => { columnOptionsHTML += `<option value="${c.id}">${c.title}</option>`; });
+
     body.innerHTML = `
         <h3 class="section-label">Quais notas exportar?</h3>
         <div class="export-options-container">
             <label><span>Todas as notas</span><input type="radio" name="pdfExportType" value="all" checked></label>
-            <label><span>Apenas notas ativas</span><input type="radio" name="pdfExportType" value="active"></label>
-            <label><span>Apenas notas concluídas</span><input type="radio" name="pdfExportType" value="completed"></label>
             <label><span>Por grupo específico</span><input type="radio" name="pdfExportType" value="group"></label>
+            <label><span>Por coluna específica</span><input type="radio" name="pdfExportType" value="column"></label>
         </div>
         <div id="pdfGroupSelectDiv" class="form-field" hidden>
             <select id="pdfGroupSelect">${groupOptionsHTML}</select>
         </div>
+        <div id="pdfColumnSelectDiv" class="form-field" hidden>
+            <select id="pdfColumnSelect">${columnOptionsHTML}</select>
+        </div>
+
+        <h3 class="section-label">Aparência do PDF</h3>
         <div class="export-options-container">
-            <label><span>Incluir metadados (grupo, data)</span><input type="checkbox" id="includeMetadata" checked></label>
+            <label><span>Incluir metadados (grupo, data, coluna)</span><input type="checkbox" id="includeMetadata" checked></label>
+            <label><span>Incluir cores das notas</span><input type="checkbox" id="includeColors" checked></label>
+            <label><span>Incluir índice das notas</span><input type="checkbox" id="includeIndex"></label>
+            <label><span>Uma nota por página</span><input type="checkbox" id="onePerPage"></label>
         </div>
         <div class="modal-actions">
             <button class="secondary" onclick="window.closePDFExportModal()">Cancelar</button>
-            <button class="success" onclick="window.exportNotesToPdf()">Exportar</button>
+            <button class="success" onclick="window.exportNotesToPdf()">Exportar PDF</button>
         </div>
     `;
 
     modal.querySelectorAll('input[name="pdfExportType"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             document.getElementById('pdfGroupSelectDiv').hidden = e.target.value !== 'group';
+            document.getElementById('pdfColumnSelectDiv').hidden = e.target.value !== 'column';
         });
     });
 
@@ -51,158 +64,158 @@ export function closePDFExportModal() {
     document.getElementById('pdfExportModal').classList.remove('show');
 }
 
+const NOTE_COLOR_MAP = {
+    red: [254, 242, 242], blue: [239, 246, 255], green: [240, 253, 244],
+    yellow: [255, 251, 235], orange: [255, 247, 237], purple: [250, 245, 255],
+    pink: [253, 242, 248], cyan: [236, 254, 255], lime: [247, 254, 231],
+    indigo: [238, 242, 255], gray: [248, 250, 252]
+};
+
 export async function exportNotesToPdf() {
     const exportType = document.querySelector('#pdfExportModal input[name="pdfExportType"]:checked').value;
     const includeMetadata = document.querySelector('#pdfExportModal #includeMetadata').checked;
+    const includeColors = document.querySelector('#pdfExportModal #includeColors').checked;
+    const includeIndex = document.querySelector('#pdfExportModal #includeIndex').checked;
+    const onePerPage = document.querySelector('#pdfExportModal #onePerPage').checked;
     const groupSelect = document.querySelector('#pdfExportModal #pdfGroupSelect');
-    const group = groupSelect ? groupSelect.value : '';
+    const columnSelect = document.querySelector('#pdfExportModal #pdfColumnSelect');
 
     let notesToExport = [];
     if (exportType === 'all') notesToExport = state.notes;
-    else if (exportType === 'active') notesToExport = state.notes.filter(n => n.status !== 'completed');
-    else if (exportType === 'completed') notesToExport = state.notes.filter(n => n.status === 'completed');
-    else if (exportType === 'group' && group) notesToExport = state.notes.filter(n => n.group === group);
+    else if (exportType === 'group' && groupSelect) notesToExport = state.notes.filter(n => n.group === groupSelect.value);
+    else if (exportType === 'column' && columnSelect) notesToExport = state.notes.filter(n => n.status === columnSelect.value);
 
     if (notesToExport.length === 0) {
-        alert('Nenhuma nota para exportar com os filtros selecionados.');
+        showToast('Nenhuma nota para exportar com os filtros selecionados.', 'warning');
         return;
     }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    let y = 10;
-    const margin = 10;
+    const margin = 15;
+    const usableWidth = doc.internal.pageSize.width - margin * 2;
     const pageHeight = doc.internal.pageSize.height;
+    let y = margin;
 
-    for (const note of notesToExport) {
-        doc.setFontSize(16);
-        doc.text(note.title, margin, y);
-        y += 10;
+    // Helper: cor de fundo
+    const applyNoteColor = (note) => {
+        if (includeColors && NOTE_COLOR_MAP[note.color]) {
+            const [r, g, b] = NOTE_COLOR_MAP[note.color];
+            doc.setFillColor(r, g, b);
+            return true;
+        }
+        return false;
+    };
 
-        if (includeMetadata) {
-            doc.setFontSize(10);
-            doc.setTextColor(100);
-            doc.text(`Grupo: ${note.group || 'N/A'}`, margin, y); y += 6;
-            doc.text(`Criado em: ${new Date(note.createdAt).toLocaleDateString()}`, margin, y); y += 6;
-            doc.setTextColor(0);
+    // Capa
+    doc.setFontSize(22);
+    doc.setTextColor(59, 130, 246);
+    doc.text('Relatório de Notas', margin, 40);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}`, margin, 50);
+    doc.text(`Total de notas: ${notesToExport.length}`, margin, 57);
+    const colName = state.columns.find(c => c.id === notesToExport[0]?.status)?.title;
+    if (exportType !== 'all' && colName) {
+        doc.text(`Filtro: ${colName}`, margin, 64);
+    }
+    y = 80;
+
+    // Índice (opcional)
+    if (includeIndex) {
+        doc.setFontSize(14);
+        doc.setTextColor(30);
+        doc.text('Índice', margin, y);
+        y += 8;
+        doc.setFontSize(10);
+        doc.setTextColor(80);
+        notesToExport.forEach((note, i) => {
+            if (y > pageHeight - 20) { doc.addPage(); y = margin; }
+            doc.text(`${i + 1}. ${note.title}`, margin + 4, y);
+            y += 6;
+        });
+        doc.addPage();
+        y = margin;
+    }
+
+    // Notas
+    for (let i = 0; i < notesToExport.length; i++) {
+        const note = notesToExport[i];
+        if (onePerPage && i > 0) { doc.addPage(); y = margin; }
+
+        // Separador entre notas
+        if (!onePerPage && i > 0) {
+            if (y > pageHeight - 60) { doc.addPage(); y = margin; }
+            doc.setDrawColor(220);
+            doc.line(margin, y, margin + usableWidth, y);
+            y += 8;
         }
 
+        // Fundo colorido
+        if (applyNoteColor(note)) {
+            const blockHeight = Math.min(40, pageHeight - y - margin);
+            doc.roundedRect(margin - 2, y - 5, usableWidth + 4, blockHeight, 3, 3, 'F');
+        }
+
+        // Título
+        doc.setFontSize(14);
+        doc.setTextColor(30);
+        const titleLines = doc.splitTextToSize(note.title, usableWidth);
+        doc.text(titleLines, margin, y);
+        y += titleLines.length * 7;
+
+        // Metadados
+        if (includeMetadata) {
+            doc.setFontSize(9);
+            doc.setTextColor(120);
+            const col = state.columns.find(c => c.id === note.status);
+            const meta = [];
+            if (note.group) meta.push(`Grupo: ${note.group}`);
+            if (col) meta.push(`Coluna: ${col.title}`);
+            meta.push(`Criado: ${new Date(note.createdAt).toLocaleDateString('pt-BR')}`);
+            if (note.reminderAt) meta.push(`Lembrete: ${new Date(note.reminderAt).toLocaleString('pt-BR')}`);
+            doc.text(meta.join('  |  '), margin, y);
+            y += 7;
+        }
+
+        // Conteúdo renderizado via html2canvas
+        doc.setTextColor(0);
         const tempDiv = document.createElement('div');
         tempDiv.className = 'pdf-export-content';
+        tempDiv.style.width = '180mm';
         tempDiv.innerHTML = note.content;
         document.body.appendChild(tempDiv);
 
-        const canvas = await html2canvas(tempDiv, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        const imgHeight = (canvas.height * 180) / canvas.width;
+        try {
+            const canvas = await html2canvas(tempDiv, { scale: 2, logging: false });
+            const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
-        if (y + imgHeight > pageHeight - margin) { doc.addPage(); y = margin; }
-        doc.addImage(imgData, 'PNG', margin, y, 180, imgHeight);
-        y += imgHeight + 10;
-        document.body.removeChild(tempDiv);
+            if (y + imgHeight > pageHeight - margin) { doc.addPage(); y = margin; }
+            const imgData = canvas.toDataURL('image/png');
+            doc.addImage(imgData, 'PNG', margin, y, usableWidth, imgHeight);
+            y += imgHeight + 8;
+        } catch (err) {
+            console.error('Erro ao renderizar nota:', err);
+            y += 5;
+        } finally {
+            document.body.removeChild(tempDiv);
+        }
+
         if (y > pageHeight - margin) { doc.addPage(); y = margin; }
+    }
+
+    // Rodapé com numeração de páginas
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Página ${p} de ${totalPages}`, doc.internal.pageSize.width - margin - 25, pageHeight - 8);
     }
 
     doc.save('notas.pdf');
     closePDFExportModal();
-}
-
-/* =========================================
-   NOTAS — JSON Export/Import
-   ========================================= */
-
-export function showJSONExportModal() {
-    const modal = document.getElementById('jsonExportModal');
-    const container = document.getElementById('jsonExportOptionsContainer');
-    const groups = new Set(state.notes.map(n => n.group).filter(Boolean));
-    let groupOptionsHTML = '';
-    groups.forEach(g => { groupOptionsHTML += `<option value="${g}">${g}</option>`; });
-
-    container.innerHTML = `
-        <div class="export-options-container">
-            <label><span>Todas as notas</span><input type="radio" name="jsonExportType" value="all" checked></label>
-            <label><span>Apenas notas ativas</span><input type="radio" name="jsonExportType" value="active"></label>
-            <label><span>Apenas notas concluídas</span><input type="radio" name="jsonExportType" value="completed"></label>
-            <label><span>Por grupo específico</span><input type="radio" name="jsonExportType" value="group"></label>
-        </div>
-        <div id="jsonGroupSelectDiv" class="form-field" hidden>
-            <select id="jsonGroupSelect">${groupOptionsHTML}</select>
-        </div>
-    `;
-
-    modal.querySelectorAll('input[name="jsonExportType"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            document.getElementById('jsonGroupSelectDiv').hidden = e.target.value !== 'group';
-        });
-    });
-
-    modal.classList.add('show');
-}
-
-export function closeJSONExportModal() {
-    document.getElementById('jsonExportModal').classList.remove('show');
-}
-
-export function exportNotesToJson() {
-    const exportType = document.querySelector('#jsonExportModal input[name="jsonExportType"]:checked').value;
-    const groupSelect = document.querySelector('#jsonExportModal #jsonGroupSelect');
-    const group = groupSelect ? groupSelect.value : '';
-
-    let notesToExport = [];
-    if (exportType === 'all') notesToExport = state.notes;
-    else if (exportType === 'active') notesToExport = state.notes.filter(n => n.status !== 'completed');
-    else if (exportType === 'completed') notesToExport = state.notes.filter(n => n.status === 'completed');
-    else if (exportType === 'group' && group) notesToExport = state.notes.filter(n => n.group === group);
-
-    if (notesToExport.length === 0) {
-        alert('Nenhuma nota para exportar com os filtros selecionados.');
-        return;
-    }
-
-    const blob = new Blob([JSON.stringify(notesToExport, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'notas.json';
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-/**
- * Importa notas de arquivo JSON
- * BUG FIX: Input agora está fora de container desktop-only para funcionar no mobile
- */
-export function importJSON(inputElement) {
-    const file = inputElement.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            if (!Array.isArray(importedData)) throw new Error('O arquivo JSON não é um array válido.');
-
-            const newNotes = importedData.map(note => ({
-                id: crypto.randomUUID(),
-                title: note.title || 'Sem Título',
-                content: note.content || '',
-                group: note.group || '',
-                color: note.color || 'gray',
-                status: note.status || 'to-do',
-                createdAt: note.createdAt || new Date().toISOString()
-            }));
-
-            state.notes.push(...newNotes);
-            saveNotes();
-            bulkInsertNotes(newNotes);
-            renderColumns();
-            alert(`${newNotes.length} nota(s) importada(s) com sucesso!`);
-        } catch (error) {
-            alert('Erro ao importar arquivo: ' + error.message);
-        }
-    };
-    reader.readAsText(file);
-    inputElement.value = '';
+    showToast('PDF exportado com sucesso!', 'success');
 }
 
 /* =========================================
@@ -317,7 +330,7 @@ export async function exportAnalyses(format) {
     const analysesToExport = state.analyses.filter(a => selectedIds.includes(a.id));
 
     if (analysesToExport.length === 0) {
-        alert('Nenhuma análise selecionada para exportar.');
+        showToast('Nenhuma análise selecionada para exportar.', 'warning');
         return;
     }
 
@@ -442,9 +455,9 @@ export function importAnalysesJSON() {
             saveAnalyses();
             bulkInsertAnalyses(newAnalyses);
             renderAnalysisBlocks();
-            alert(`${newAnalyses.length} análise(s) importada(s) com sucesso!`);
+            showToast(`${newAnalyses.length} análise(s) importada(s) com sucesso!`, 'success');
         } catch (error) {
-            alert('Erro ao importar arquivo: ' + error.message);
+            showToast('Erro ao importar arquivo: ' + error.message, 'error');
         }
     };
     reader.readAsText(file);

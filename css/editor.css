@@ -302,3 +302,28 @@
     max-width: 100% !important;
     height: auto !important;
 }
+
+/* === IMAGE DRAG RESIZE === */
+
+.rich-editor img,
+.block-content-editor img {
+    cursor: nwse-resize;
+    transition: outline 0.15s;
+}
+
+.rich-editor img:hover,
+.block-content-editor img:hover {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.img-resizing {
+    outline: 2px dashed var(--primary) !important;
+    outline-offset: 2px;
+    opacity: 0.85;
+}
+
+body.resizing-image {
+    cursor: nwse-resize !important;
+    user-select: none !important;
+}

@@ -2,14 +2,14 @@
    APP — Ponto de entrada, inicialização, bindings globais
    ============================================ */
 
-import { loadState } from './state.js';
+import state, { loadState, upsertColumn, removeColumn, clearNoteReminder } from './state.js';
 import { initTheme } from './theme.js';
 import { requireAuth, signOut, onAuthStateChange } from './auth.js';
-import { toggleCollapsible, generateColorPaletteHTML } from './utils.js';
+import { toggleCollapsible, generateColorPaletteHTML, showToast, generateColumnId } from './utils.js';
 import {
     formatText, applyTextColor, formatAnalysisBlock,
     changeTextSize, selectNoteColor, insertImage, insertAnalysisImage,
-    setupImageToggling, openImageResizeModal, closeImageResizeModal, applyImageResize
+    setupImageToggling
 } from './editor.js';
 import {
     setupDesktopUI, setupMobileUI, setupFilters,
@@ -18,7 +18,7 @@ import {
 import {
     openCreateModal, closeModal, saveNote,
     viewNote, closeViewModal, editNote,
-    toggleComplete, deleteNote, shareNote
+    toggleComplete, deleteNote, shareNote, toggleReminderInput
 } from './notes.js';
 import {
     openAnalysisPanel, closeAnalysisModal,
@@ -30,7 +30,6 @@ import {
 } from './analysis.js';
 import {
     showPDFExportModal, closePDFExportModal, exportNotesToPdf,
-    showJSONExportModal, closeJSONExportModal, exportNotesToJson, importJSON,
     openAnalysisExportModal, closeAnalysisExportModal,
     toggleAllAnalysesForExport, exportAnalyses, importAnalysesJSON
 } from './export.js';
@@ -49,6 +48,7 @@ window.editNote = editNote;
 window.toggleComplete = toggleComplete;
 window.deleteNote = deleteNote;
 window.shareNote = shareNote;
+window.toggleReminderInput = toggleReminderInput;
 
 // Editor
 window.formatText = formatText;
@@ -58,8 +58,6 @@ window.changeTextSize = changeTextSize;
 window.selectNoteColor = selectNoteColor;
 window.insertImage = insertImage;
 window.insertAnalysisImage = insertAnalysisImage;
-window.closeImageResizeModal = closeImageResizeModal;
-window.applyImageResize = applyImageResize;
 
 // Análises
 window.openAnalysisPanel = openAnalysisPanel;
@@ -78,18 +76,23 @@ window.closeSideNoteModal = closeSideNoteModal;
 window.saveSideNote = saveSideNote;
 window.deleteSideNote = deleteSideNote;
 
-// Export/Import
+// Export
 window.showPDFExportModal = showPDFExportModal;
 window.closePDFExportModal = closePDFExportModal;
 window.exportNotesToPdf = exportNotesToPdf;
-window.showJSONExportModal = showJSONExportModal;
-window.closeJSONExportModal = closeJSONExportModal;
-window.exportNotesToJson = exportNotesToJson;
-window.importJSON = importJSON;
 window.openAnalysisExportModal = openAnalysisExportModal;
 window.closeAnalysisExportModal = closeAnalysisExportModal;
 window.toggleAllAnalysesForExport = toggleAllAnalysesForExport;
 window.importAnalysesJSON = importAnalysesJSON;
+
+// Colunas
+window.openColumnModal = openColumnModal;
+window.closeColumnModal = closeColumnModal;
+window.saveColumn = saveColumn;
+window.deleteCurrentColumn = deleteCurrentColumn;
+
+// Lembrete
+window.dismissReminder = dismissReminder;
 
 // Utils
 window.toggleCollapsible = toggleCollapsible;
@@ -98,18 +101,137 @@ window.toggleCollapsible = toggleCollapsible;
 window.signOut = signOut;
 
 /* =========================================
+   Gestão de Colunas
+   ========================================= */
+
+function openColumnModal(columnId = null) {
+    state.editingColumnId = columnId;
+    const modal = document.getElementById('columnModal');
+    const title = document.getElementById('columnModalTitle');
+    const input = document.getElementById('columnTitleInput');
+    const isDoneCheckbox = document.getElementById('columnIsDone');
+    const deleteBtn = document.getElementById('deleteColumnBtn');
+
+    if (columnId) {
+        const col = state.columns.find(c => c.id === columnId);
+        if (!col) return;
+        title.textContent = 'Editar Coluna';
+        input.value = col.title;
+        isDoneCheckbox.checked = col.isDone;
+        deleteBtn.style.display = '';
+    } else {
+        title.textContent = 'Nova Coluna';
+        input.value = '';
+        isDoneCheckbox.checked = false;
+        deleteBtn.style.display = 'none';
+    }
+
+    modal.classList.add('show');
+    input.focus();
+}
+
+function closeColumnModal() {
+    document.getElementById('columnModal').classList.remove('show');
+    state.editingColumnId = null;
+}
+
+async function saveColumn() {
+    const titleVal = document.getElementById('columnTitleInput').value.trim();
+    const isDone = document.getElementById('columnIsDone').checked;
+    if (!titleVal) { showToast('Nome da coluna é obrigatório.', 'warning'); return; }
+
+    if (state.editingColumnId) {
+        const col = state.columns.find(c => c.id === state.editingColumnId);
+        if (col) {
+            col.title = titleVal;
+            col.isDone = isDone;
+            await upsertColumn({ id: col.id, title: titleVal, position: col.position, is_done: isDone });
+        }
+    } else {
+        const id = generateColumnId(titleVal);
+        const position = state.columns.length;
+        const newCol = { id, title: titleVal, position, isDone: isDone };
+        state.columns.push(newCol);
+        await upsertColumn({ id, title: titleVal, position, is_done: isDone });
+    }
+
+    closeColumnModal();
+    setupColumns();
+    renderColumns();
+    updateStats();
+    showToast('Coluna salva com sucesso!', 'success');
+}
+
+async function deleteCurrentColumn() {
+    if (!state.editingColumnId) return;
+    const col = state.columns.find(c => c.id === state.editingColumnId);
+    if (!col) return;
+
+    const notesInColumn = state.notes.filter(n => n.status === col.id);
+    if (notesInColumn.length > 0) {
+        showToast(`Não pode excluir: existem ${notesInColumn.length} nota(s) nesta coluna. Mova-as primeiro.`, 'error');
+        return;
+    }
+
+    state.columns = state.columns.filter(c => c.id !== col.id);
+    await removeColumn(col.id);
+    closeColumnModal();
+    setupColumns();
+    renderColumns();
+    updateStats();
+    showToast('Coluna excluída.', 'success');
+}
+
+/* =========================================
+   Lembretes — Verificador periódico
+   ========================================= */
+
+let currentReminderId = null;
+
+function checkReminders() {
+    const now = new Date();
+    for (const note of state.notes) {
+        if (!note.reminderAt) continue;
+        const reminderDate = new Date(note.reminderAt);
+        if (reminderDate <= now) {
+            showReminderNotification(note);
+            clearNoteReminder(note.id);
+            note.reminderAt = null;
+            break; // show one at a time
+        }
+    }
+}
+
+function showReminderNotification(note) {
+    currentReminderId = note.id;
+    const content = document.getElementById('reminderContent');
+    content.innerHTML = `
+        <p class="reminder-note-title"><strong>${note.title}</strong></p>
+        <p class="reminder-note-group">${note.group || ''}</p>
+    `;
+    document.getElementById('reminderModal').classList.add('show');
+
+    // Browser notification (if permission granted)
+    if (Notification.permission === 'granted') {
+        new Notification('🔔 Lembrete', { body: note.title, icon: '/favicon.ico' });
+    }
+}
+
+function dismissReminder() {
+    document.getElementById('reminderModal').classList.remove('show');
+    currentReminderId = null;
+}
+
+/* =========================================
    Inicialização
    ========================================= */
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Verificar autenticação
     const session = await requireAuth();
     if (!session) return;
 
-    // Carregar dados do Supabase
     await loadState();
 
-    // Inicializar UI
     initTheme();
     setupDesktopUI();
     setupMobileUI();
@@ -119,25 +241,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupFilters();
     setupImageToggling();
 
-    // Configurar perfil do usuário
     setupUserProfile(session);
 
-    // Paleta de cores do editor de notas
     document.getElementById('noteTextColorPalette').innerHTML =
         generateColorPaletteHTML('applyTextColor');
 
-    // Esconder loading, mostrar app
     const loading = document.getElementById('appLoading');
     const appContent = document.getElementById('appContent');
     if (loading) loading.style.display = 'none';
     if (appContent) appContent.style.display = '';
 
-    // Listener para sessão expirada
     onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
             window.location.href = '/login.html';
         }
     });
+
+    // Solicitar permissão de notificação
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+
+    // Verificar lembretes a cada 30s
+    checkReminders();
+    setInterval(checkReminders, 30000);
 });
 
 /**

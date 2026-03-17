@@ -3,9 +3,6 @@
    ============================================ */
 
 import state, { saveNotes, upsertNote } from './state.js';
-import { COLUMN_STATUS_MAP } from './utils.js';
-
-const COLUMN_IDS = Object.values(COLUMN_STATUS_MAP);
 
 /**
  * Gera o HTML das estatísticas usando data-stat para evitar IDs duplicados
@@ -86,8 +83,10 @@ export function setupFilters() {
  * Cria o DOM de um card de nota
  */
 export function createNoteCard(note) {
+    const doneColumnIds = new Set(state.columns.filter(c => c.isDone).map(c => c.id));
+    const isDone = doneColumnIds.has(note.status);
     const card = document.createElement('div');
-    card.className = `note-card ${note.status === 'completed' ? 'completed' : ''}`;
+    card.className = `note-card ${isDone ? 'completed' : ''}`;
     card.dataset.id = note.id;
     card.dataset.color = note.color;
     card.draggable = true;
@@ -117,9 +116,9 @@ export function createNoteCard(note) {
     noteActions.className = 'note-actions';
 
     const completeBtn = document.createElement('button');
-    completeBtn.className = `note-action-btn ${note.status === 'completed' ? 'completed' : ''}`;
-    completeBtn.innerHTML = note.status === 'completed' ? '✅' : '✔️';
-    completeBtn.title = note.status === 'completed' ? 'Marcar como não concluída' : 'Marcar como concluída';
+    completeBtn.className = `note-action-btn ${isDone ? 'completed' : ''}`;
+    completeBtn.innerHTML = isDone ? '✅' : '✔️';
+    completeBtn.title = isDone ? 'Marcar como não concluída' : 'Marcar como concluída';
     completeBtn.onclick = (e) => { e.stopPropagation(); window.toggleComplete(note.id); };
 
     const deleteBtn = document.createElement('button');
@@ -144,7 +143,8 @@ export function createNoteCard(note) {
     const noteMeta = document.createElement('div');
     noteMeta.className = 'note-meta';
     const groupSpan = note.group ? `<span class="note-group">${note.group}</span>` : '';
-    noteMeta.innerHTML = `${groupSpan}<span>${new Date(note.createdAt).toLocaleDateString()}</span>`;
+    const reminderSpan = note.reminderAt ? `<span class="note-reminder-badge" title="Lembrete: ${new Date(note.reminderAt).toLocaleString()}">🔔</span>` : '';
+    noteMeta.innerHTML = `${groupSpan}${reminderSpan}<span>${new Date(note.createdAt).toLocaleDateString()}</span>`;
     card.appendChild(noteMeta);
 
     return card;
@@ -154,8 +154,10 @@ export function createNoteCard(note) {
  * Renderiza todas as colunas com notas filtradas
  */
 export function renderColumns() {
+    const columnIds = state.columns.map(c => c.id);
+
     // Limpar conteúdo das colunas (preservando header)
-    COLUMN_IDS.forEach(columnId => {
+    columnIds.forEach(columnId => {
         const columnEl = document.getElementById(`column-${columnId}`);
         if (columnEl) {
             while (columnEl.children.length > 1) {
@@ -177,7 +179,7 @@ export function renderColumns() {
 
     // Contar por coluna
     const counts = {};
-    COLUMN_IDS.forEach(id => counts[id] = 0);
+    columnIds.forEach(id => counts[id] = 0);
 
     // Filtrar e renderizar
     const filteredNotes = state.notes.filter(note => {
@@ -193,14 +195,14 @@ export function renderColumns() {
         const column = document.getElementById(`column-${note.status}`);
         if (column) {
             column.appendChild(createNoteCard(note));
-            counts[note.status]++;
+            counts[note.status] = (counts[note.status] || 0) + 1;
         }
     });
 
     // Atualizar contadores
-    COLUMN_IDS.forEach(id => {
+    columnIds.forEach(id => {
         const countEl = document.getElementById(`count-${id}`);
-        if (countEl) countEl.textContent = counts[id];
+        if (countEl) countEl.textContent = counts[id] || 0;
     });
 
     // Atualizar filtros de grupo
@@ -222,11 +224,11 @@ export function renderColumns() {
 
 /**
  * Atualiza todas as estatísticas (usa data-stat para queries sem IDs duplicados)
- * BUG FIX: usa querySelectorAll com data-attributes em vez de IDs duplicados
  */
 export function updateStats() {
-    const totalActive = state.notes.filter(n => n.status !== 'completed').length;
-    const totalCompleted = state.notes.length - totalActive;
+    const doneColumnIds = new Set(state.columns.filter(c => c.isDone).map(c => c.id));
+    const totalCompleted = state.notes.filter(n => doneColumnIds.has(n.status)).length;
+    const totalActive = state.notes.length - totalCompleted;
     const groups = new Set(state.notes.map(n => n.group).filter(Boolean));
 
     document.querySelectorAll('[data-stat="active"]').forEach(el => el.textContent = totalActive);
@@ -242,40 +244,52 @@ export function setupColumns() {
     const container = document.getElementById('columnsContainer');
     container.innerHTML = '';
 
-    Object.entries(COLUMN_STATUS_MAP).forEach(([title, columnId]) => {
+    const sortedColumns = [...state.columns].sort((a, b) => a.position - b.position);
+
+    sortedColumns.forEach(col => {
         const columnEl = document.createElement('div');
         columnEl.className = 'column';
-        columnEl.id = `column-${columnId}`;
+        columnEl.id = `column-${col.id}`;
         columnEl.ondragover = (e) => {
             e.preventDefault();
-            const col = e.target.closest('.column');
-            if (col) col.classList.add('drop-zone');
+            const target = e.target.closest('.column');
+            if (target) target.classList.add('drop-zone');
         };
         columnEl.ondrop = (e) => {
             e.preventDefault();
             const id = e.dataTransfer.getData('text');
-            const noteEl = document.querySelector(`[data-id="${id}"]`);
+            const noteEl = document.querySelector(`[data-id="${CSS.escape(id)}"]`);
             if (noteEl) noteEl.classList.remove('dragging');
             const noteIndex = state.notes.findIndex(n => n.id == id);
             if (noteIndex !== -1) {
-                state.notes[noteIndex].status = columnId;
+                state.notes[noteIndex].status = col.id;
                 saveNotes();
                 upsertNote(state.notes[noteIndex]);
                 renderColumns();
             }
-            document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-zone'));
+            document.querySelectorAll('.column').forEach(c => c.classList.remove('drop-zone'));
         };
         columnEl.ondragleave = (e) => {
-            const col = e.target.closest('.column');
-            if (col) col.classList.remove('drop-zone');
+            const target = e.target.closest('.column');
+            if (target) target.classList.remove('drop-zone');
         };
 
         columnEl.innerHTML = `
             <div class="column-header">
-                <span class="column-title">${title}</span>
-                <span class="column-count" id="count-${columnId}">0</span>
+                <span class="column-title">${col.title}</span>
+                <div class="column-header-actions">
+                    <button class="column-edit-btn" onclick="openColumnModal('${col.id}')" title="Editar coluna">⚙️</button>
+                    <span class="column-count" id="count-${col.id}">0</span>
+                </div>
             </div>
         `;
         container.appendChild(columnEl);
     });
+
+    // Botão de adicionar coluna
+    const addColBtn = document.createElement('div');
+    addColBtn.className = 'column add-column-btn';
+    addColBtn.innerHTML = '<span class="add-column-label">＋ Nova Coluna</span>';
+    addColBtn.onclick = () => window.openColumnModal();
+    container.appendChild(addColBtn);
 }

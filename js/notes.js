@@ -5,6 +5,7 @@
 import state, { saveNotes, upsertNote, removeNote } from './state.js';
 import { renderColumns, updateStats } from './render.js';
 import { selectNoteColor } from './editor.js';
+import { showToast } from './utils.js';
 
 /**
  * Abre modal de criação de nova nota
@@ -15,8 +16,33 @@ export function openCreateModal() {
     document.getElementById('modalTitleInput').value = '';
     document.getElementById('modalContentEditor').innerHTML = '';
     document.getElementById('modalGroupInput').value = '';
+    document.getElementById('reminderToggle').checked = false;
+    document.getElementById('reminderDatetime').style.display = 'none';
+    document.getElementById('reminderDatetime').value = '';
+    // Populate status select with current columns
+    populateStatusSelect('');
     selectNoteColor('blue');
     document.getElementById('noteModal').classList.add('show');
+}
+
+/**
+ * Popula o select de status com as colunas dinâmicas
+ */
+function populateStatusSelect(currentStatus) {
+    const select = document.getElementById('modalStatusSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    const sorted = [...state.columns].sort((a, b) => a.position - b.position);
+    sorted.forEach(col => {
+        const opt = document.createElement('option');
+        opt.value = col.id;
+        opt.textContent = col.title;
+        if (col.id === currentStatus) opt.selected = true;
+        select.appendChild(opt);
+    });
+    if (!currentStatus && sorted.length > 0) {
+        select.value = sorted[0].id;
+    }
 }
 
 /**
@@ -34,9 +60,14 @@ export function saveNote() {
     const content = document.getElementById('modalContentEditor').innerHTML;
     const group = document.getElementById('modalGroupInput').value;
     const color = document.querySelector('.color-option.active')?.dataset.color || 'gray';
+    const statusSelect = document.getElementById('modalStatusSelect');
+    const status = statusSelect ? statusSelect.value : (state.columns[0]?.id || 'to-do');
+    const reminderOn = document.getElementById('reminderToggle').checked;
+    const reminderVal = document.getElementById('reminderDatetime').value;
+    const reminderAt = reminderOn && reminderVal ? new Date(reminderVal).toISOString() : null;
 
     if (!title.trim()) {
-        alert('O título da nota é obrigatório.');
+        showToast('O título da nota é obrigatório.', 'warning');
         return;
     }
 
@@ -47,6 +78,8 @@ export function saveNote() {
             note.content = content;
             note.group = group;
             note.color = color;
+            note.status = status;
+            note.reminderAt = reminderAt;
             upsertNote(note);
         }
     } else {
@@ -56,7 +89,8 @@ export function saveNote() {
             content,
             group,
             color,
-            status: 'to-do',
+            status,
+            reminderAt,
             createdAt: new Date().toISOString()
         };
         state.notes.push(newNote);
@@ -66,6 +100,7 @@ export function saveNote() {
     saveNotes();
     closeModal();
     renderColumns();
+    showToast('Nota salva com sucesso!', 'success');
 }
 
 /**
@@ -101,6 +136,17 @@ export function editNote() {
     document.getElementById('modalContentEditor').innerHTML = state.selectedNoteForView.content;
     document.getElementById('modalGroupInput').value = state.selectedNoteForView.group;
     selectNoteColor(state.selectedNoteForView.color);
+    populateStatusSelect(state.selectedNoteForView.status);
+    // Reminder
+    const hasReminder = !!state.selectedNoteForView.reminderAt;
+    document.getElementById('reminderToggle').checked = hasReminder;
+    document.getElementById('reminderDatetime').style.display = hasReminder ? '' : 'none';
+    if (hasReminder) {
+        const dt = new Date(state.selectedNoteForView.reminderAt);
+        document.getElementById('reminderDatetime').value = dt.toISOString().slice(0, 16);
+    } else {
+        document.getElementById('reminderDatetime').value = '';
+    }
     closeViewModal();
     document.getElementById('noteModal').classList.add('show');
 }
@@ -110,12 +156,20 @@ export function editNote() {
  */
 export function toggleComplete(id) {
     const note = state.notes.find(n => n.id === id);
-    if (note) {
-        note.status = note.status === 'completed' ? 'to-do' : 'completed';
-        saveNotes();
-        upsertNote(note);
-        renderColumns();
+    if (!note) return;
+
+    const doneColumns = state.columns.filter(c => c.isDone);
+    const notDoneColumns = state.columns.filter(c => !c.isDone);
+    const isDone = doneColumns.some(c => c.id === note.status);
+
+    if (isDone && notDoneColumns.length > 0) {
+        note.status = notDoneColumns[0].id;
+    } else if (!isDone && doneColumns.length > 0) {
+        note.status = doneColumns[0].id;
     }
+    saveNotes();
+    upsertNote(note);
+    renderColumns();
 }
 
 /**
@@ -127,6 +181,7 @@ export function deleteNote(id) {
         saveNotes();
         removeNote(id);
         renderColumns();
+        showToast('Nota excluída.', 'info');
     }
 }
 
@@ -142,9 +197,16 @@ export function shareNote(platform) {
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     } else if (platform === 'discord') {
         navigator.clipboard.writeText(text).then(() => {
-            alert('Conteúdo copiado para a área de transferência. Cole no Discord.');
+            showToast('Conteúdo copiado! Cole no Discord.', 'success');
         }).catch(() => {
-            alert('Para compartilhar no Discord, copie o texto abaixo:\n\n' + text);
+            showToast('Não foi possível copiar o conteúdo.', 'error');
         });
     }
+}
+
+/**
+ * Toggle do input de lembrete
+ */
+export function toggleReminderInput(checked) {
+    document.getElementById('reminderDatetime').style.display = checked ? '' : 'none';
 }

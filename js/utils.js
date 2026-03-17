@@ -9,6 +9,18 @@ export const TEXT_COLORS = [
 ];
 
 /**
+ * Colunas padrão para novos usuários
+ */
+export const DEFAULT_COLUMNS = [
+    { id: 'notes', title: 'Anotações', position: 0, is_done: false },
+    { id: 'to-do', title: 'A fazer', position: 1, is_done: false },
+    { id: 'in-progress', title: 'Em progresso', position: 2, is_done: false },
+    { id: 'impediment', title: 'Aguardando', position: 3, is_done: false },
+    { id: 'agenda', title: 'Agendas', position: 4, is_done: false },
+    { id: 'completed', title: 'Concluídas', position: 5, is_done: true }
+];
+
+/**
  * Gera HTML da paleta de cores de texto.
  * @param {string} actionFunctionName - Nome da função global a chamar ao clicar
  */
@@ -44,13 +56,39 @@ export function toggleCollapsible(contentId) {
 }
 
 /**
- * Mapeamento de colunas: título -> id do status
+ * Exibe uma notificação toast
  */
-export const COLUMN_STATUS_MAP = {
-    'Anotações': 'notes',
-    'A fazer': 'to-do',
-    'Em progresso': 'in-progress',
-    'Aguardando': 'impediment',
-    'Agendas': 'agenda',
-    'Concluídas': 'completed'
-};
+export function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-msg">${escapeHtml(message)}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    }, duration);
+}
+
+/**
+ * Escape HTML para prevenir XSS em toasts
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
+ * Gera um ID de coluna a partir do título
+ */
+export function generateColumnId(title) {
+    return title.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || crypto.randomUUID();
+}

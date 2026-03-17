@@ -3,7 +3,7 @@
    ============================================ */
 
 import state, { saveAnalyses, upsertAnalysis, removeAnalysis } from './state.js';
-import { generateColorPaletteHTML } from './utils.js';
+import { generateColorPaletteHTML, showToast } from './utils.js';
 
 /**
  * Abre o painel de análises
@@ -95,9 +95,9 @@ export async function copyAnalysisContent() {
 
     try {
         await navigator.clipboard.writeText(finalText);
-        alert('Análise copiada com sucesso!');
+        showToast('Análise copiada com sucesso!', 'success');
     } catch {
-        alert('Não foi possível copiar a análise. Verifique as permissões do navegador.');
+        showToast('Não foi possível copiar a análise.', 'error');
     }
 }
 
@@ -172,7 +172,7 @@ export function removeAnalysisBlock(buttonElement) {
     if (document.querySelectorAll('.block-wrapper').length > 1) {
         buttonElement.closest('.block-wrapper').remove();
     } else {
-        alert('A análise precisa ter pelo menos um bloco.');
+        showToast('A análise precisa ter pelo menos um bloco.', 'warning');
     }
 }
 
@@ -223,7 +223,7 @@ export function saveAnalysis() {
     }));
 
     if (!title || (blocks.length > 0 && blocks.every(b => !b.content.trim()))) {
-        alert('O título é obrigatório e pelo menos um bloco deve ter conteúdo.');
+        showToast('O título é obrigatório e pelo menos um bloco deve ter conteúdo.', 'warning');
         return;
     }
 

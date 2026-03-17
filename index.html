@@ -70,9 +70,6 @@
         <div class="mobile-actions">
             <button onclick="openAnalysisPanel()" title="Acessar Análises">📊</button>
             <button onclick="showPDFExportModal()" title="Exportar PDF">📄</button>
-            <button onclick="showJSONExportModal()" title="Exportar/Importar Notas">💾</button>
-            <input accept=".json" id="importFileMobile" onchange="importJSON(this)" style="display:none;" type="file" />
-            <button onclick="document.getElementById('importFileMobile').click()" title="Importar Notas">📁</button>
         </div>
 
         <div class="collapsible-section">
@@ -104,9 +101,6 @@
         <div class="stats-container"></div>
     </div>
 
-    <!-- Input de importação global (fora de desktop-only para funcionar no mobile) -->
-    <input accept=".json" id="importFile" onchange="importJSON(this)" style="display:none;" type="file" />
-
     <!-- ========== DESKTOP: Controles ========== -->
     <div class="desktop-only controls-section">
         <div class="controls-row">
@@ -116,7 +110,6 @@
             </div>
             <div class="control-group">
                 <button class="warning" onclick="showPDFExportModal()">📄 Exportar Notas (PDF)</button>
-                <button class="secondary" onclick="showJSONExportModal()">💾 Exportar/Importar Notas</button>
             </div>
         </div>
         <div class="controls-row">
@@ -183,6 +176,18 @@
                 <input id="modalTitleInput" placeholder="Título da nota..." required type="text" />
                 <div class="rich-editor" contenteditable="true" id="modalContentEditor"></div>
                 <input id="modalGroupInput" placeholder="Grupo (opcional)" type="text" />
+
+                <!-- Status (coluna) -->
+                <select id="modalStatusSelect" class="form-select"></select>
+
+                <!-- Lembrete -->
+                <div class="reminder-section">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reminderToggle" onchange="toggleReminderInput(this.checked)" />
+                        🔔 Lembrete
+                    </label>
+                    <input type="datetime-local" id="reminderDatetime" class="reminder-datetime" style="display:none;" />
+                </div>
 
                 <!-- Paleta de cores da nota -->
                 <div class="note-color-section">
@@ -301,28 +306,6 @@
         </div>
     </div>
 
-    <!-- ========== MODAL: Exportar/Importar JSON ========== -->
-    <div class="modal" id="jsonExportModal">
-        <div class="modal-content modal-sm">
-            <div class="modal-header">
-                <h2 class="modal-title">Exportar/Importar Notas</h2>
-                <button class="close-modal" onclick="closeJSONExportModal()" type="button">&times;</button>
-            </div>
-            <div class="modal-body">
-                <h4>Exportar Notas</h4>
-                <p>Selecione quais notas deseja exportar como backup.</p>
-                <div id="jsonExportOptionsContainer"></div>
-                <div class="modal-actions">
-                    <button class="success" onclick="exportNotesToJson()">Exportar</button>
-                </div>
-                <hr class="modal-divider" />
-                <h4>Importar Notas</h4>
-                <p>Selecione um arquivo <code>.json</code> para adicionar notas ao seu bloco. As notas importadas serão adicionadas às existentes.</p>
-                <button class="secondary" onclick="document.getElementById('importFile').click()">📁 Escolher Arquivo para Importar</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ========== MODAL: Exportar Análises ========== -->
     <div class="modal" id="analysisExportModal">
         <div class="modal-content modal-sm">
@@ -337,32 +320,6 @@
                 <div class="modal-actions">
                     <button class="secondary" onclick="closeAnalysisExportModal()" type="button">Cancelar</button>
                     <button class="success" id="confirmAnalysisExportBtn">Exportar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== MODAL: Redimensionar Imagem ========== -->
-    <div class="modal" id="imageResizeModal">
-        <div class="modal-content modal-xs">
-            <div class="modal-header">
-                <h2 class="modal-title">Ajustar Tamanho da Imagem</h2>
-                <button class="close-modal" onclick="closeImageResizeModal()" type="button">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-field">
-                    <label for="imageWidthInput">Largura (px):</label>
-                    <input id="imageWidthInput" type="number" placeholder="ex: 300" />
-                </div>
-                <div class="form-field">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="aspectRatioToggle" checked />
-                        Manter proporções
-                    </label>
-                </div>
-                <div class="modal-actions">
-                    <button class="secondary" onclick="closeImageResizeModal()" type="button">Cancelar</button>
-                    <button class="success" onclick="applyImageResize()" type="button">Aplicar</button>
                 </div>
             </div>
         </div>
@@ -417,6 +374,47 @@
     </div>
 
     </div> <!-- /appContent -->
+
+    <!-- ========== MODAL: Gerenciar Coluna ========== -->
+    <div class="modal" id="columnModal">
+        <div class="modal-content modal-xs">
+            <div class="modal-header">
+                <h2 class="modal-title" id="columnModalTitle">Nova Coluna</h2>
+                <button class="close-modal" onclick="closeColumnModal()" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input id="columnTitleInput" placeholder="Nome da coluna..." type="text" />
+                <label class="checkbox-label">
+                    <input type="checkbox" id="columnIsDone" />
+                    Coluna de conclusão (conta como concluída nas estatísticas)
+                </label>
+                <div class="modal-actions">
+                    <button class="secondary" onclick="closeColumnModal()">Cancelar</button>
+                    <button class="danger" id="deleteColumnBtn" onclick="deleteCurrentColumn()" style="display:none;">Excluir</button>
+                    <button class="success" onclick="saveColumn()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: Lembrete ========== -->
+    <div class="modal" id="reminderModal">
+        <div class="modal-content modal-xs">
+            <div class="modal-header">
+                <h2 class="modal-title">🔔 Lembrete</h2>
+                <button class="close-modal" onclick="dismissReminder()" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="reminderContent"></div>
+                <div class="modal-actions">
+                    <button class="success" onclick="dismissReminder()">Ok, entendi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TOAST CONTAINER ========== -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <!-- ========== JS MODULAR (ES Modules) ========== -->
     <script type="module" src="js/app.js"></script>

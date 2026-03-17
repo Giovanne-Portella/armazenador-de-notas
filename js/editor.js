@@ -1,5 +1,5 @@
 /* ============================================
-   EDITOR — Rich text, formatação, cores, imagens
+   EDITOR — Rich text, formatação, cores, imagens (drag resize + Ctrl+V)
    ============================================ */
 
 import state from './state.js';
@@ -14,8 +14,6 @@ export function formatText(command, value) {
 
 /**
  * Aplica cor ao texto selecionado no editor de notas
- * BUG FIX: "initial" agora aplica a cor padrão do tema em vez de usar removeFormat
- * que removia TODA a formatação (negrito, itálico, etc.)
  */
 export function applyTextColor(command, color) {
     const editor = document.getElementById('modalContentEditor');
@@ -31,7 +29,6 @@ export function applyTextColor(command, color) {
 
 /**
  * Aplica formatação no bloco de análise
- * BUG FIX: mesma correção do applyTextColor
  */
 export function formatAnalysisBlock(buttonElement, command, value = null) {
     const editor = buttonElement.closest('.block-wrapper').querySelector('.block-content-editor');
@@ -98,57 +95,85 @@ export function insertAnalysisImage(input, blockId) {
     }
 }
 
-/**
- * Abre o modal de redimensionamento de imagem
- */
-export function openImageResizeModal(imgElement) {
-    if (!imgElement) return;
-    state.imageToResize = imgElement;
-    document.getElementById('imageWidthInput').value = imgElement.clientWidth;
-    document.getElementById('imageResizeModal').classList.add('show');
+/* =========================================
+   IMAGE DRAG RESIZE — Clicar e arrastar para redimensionar
+   ========================================= */
+
+let resizingImage = null;
+let resizeStartX = 0;
+let resizeStartWidth = 0;
+
+function onImageMouseDown(e) {
+    if (e.target.tagName !== 'IMG') return;
+    if (!e.target.closest('.rich-editor, .block-content-editor')) return;
+
+    e.preventDefault();
+    resizingImage = e.target;
+    resizeStartX = e.clientX || (e.touches && e.touches[0].clientX);
+    resizeStartWidth = resizingImage.offsetWidth;
+    resizingImage.classList.add('img-resizing');
+    document.addEventListener('mousemove', onImageMouseMove);
+    document.addEventListener('mouseup', onImageMouseUp);
+    document.addEventListener('touchmove', onImageMouseMove, { passive: false });
+    document.addEventListener('touchend', onImageMouseUp);
 }
 
-/**
- * Fecha o modal de redimensionamento de imagem
- */
-export function closeImageResizeModal() {
-    document.getElementById('imageResizeModal').classList.remove('show');
-    state.imageToResize = null;
+function onImageMouseMove(e) {
+    if (!resizingImage) return;
+    e.preventDefault();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    const delta = clientX - resizeStartX;
+    const newWidth = Math.max(50, resizeStartWidth + delta);
+    const ratio = resizingImage.naturalHeight / resizingImage.naturalWidth;
+    resizingImage.style.width = newWidth + 'px';
+    resizingImage.style.height = Math.round(newWidth * ratio) + 'px';
 }
 
-/**
- * Aplica o redimensionamento da imagem
- */
-export function applyImageResize() {
-    if (!state.imageToResize) return;
-
-    const newWidth = parseInt(document.getElementById('imageWidthInput').value, 10);
-    if (isNaN(newWidth) || newWidth <= 0) {
-        alert('Por favor, insira um valor de largura válido.');
-        return;
+function onImageMouseUp() {
+    if (resizingImage) {
+        resizingImage.classList.remove('img-resizing');
+        resizingImage = null;
     }
+    document.removeEventListener('mousemove', onImageMouseMove);
+    document.removeEventListener('mouseup', onImageMouseUp);
+    document.removeEventListener('touchmove', onImageMouseMove);
+    document.removeEventListener('touchend', onImageMouseUp);
+}
 
-    const maintainAspectRatio = document.getElementById('aspectRatioToggle').checked;
-    if (maintainAspectRatio) {
-        const ratio = state.imageToResize.naturalHeight / state.imageToResize.naturalWidth;
-        state.imageToResize.style.width = newWidth + 'px';
-        state.imageToResize.style.height = (newWidth * ratio) + 'px';
-    } else {
-        state.imageToResize.style.width = newWidth + 'px';
-        state.imageToResize.style.height = 'auto';
+/* =========================================
+   CTRL+V — Colar imagens da área de transferência
+   ========================================= */
+
+function onEditorPaste(e) {
+    const editor = e.target.closest('.rich-editor, .block-content-editor');
+    if (!editor) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                editor.focus();
+                document.execCommand('insertHTML', false, `<img src="${ev.target.result}" style="max-width:100%;" />`);
+            };
+            reader.readAsDataURL(blob);
+            return;
+        }
     }
-
-    closeImageResizeModal();
 }
 
 /**
- * Configura listener para clique em imagens (abre redimensionamento)
+ * Configura listeners para imagens (drag resize + paste)
  */
 export function setupImageToggling() {
-    document.body.addEventListener('click', (event) => {
-        if (event.target.tagName === 'IMG' && event.target.closest('.rich-editor, .block-content-editor')) {
-            event.preventDefault();
-            openImageResizeModal(event.target);
-        }
-    });
+    // Drag resize: mousedown on images
+    document.body.addEventListener('mousedown', onImageMouseDown);
+    document.body.addEventListener('touchstart', onImageMouseDown, { passive: false });
+
+    // Ctrl+V paste images
+    document.body.addEventListener('paste', onEditorPaste);
 }
