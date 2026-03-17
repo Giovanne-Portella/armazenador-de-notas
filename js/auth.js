@@ -15,24 +15,44 @@ function isMedianApp() {
 
 /**
  * Login nativo Google via Median.co JavaScript Bridge
- * Retorna idToken sem abrir browser externo
+ * Tenta vários formatos de API (median / gonative)
  */
 function medianGoogleLogin() {
     return new Promise((resolve, reject) => {
-        if (!window.median?.socialLogin?.google) {
-            return reject(new Error('Median social login não disponível'));
-        }
+        const bridge = window.median || window.gonative;
+        if (!bridge) return reject(new Error('Bridge não disponível'));
 
-        // Median bridge: callback-based API
-        median.socialLogin.google.login({
-            callback: function (result) {
-                if (result && result.idToken) {
-                    resolve(result);
-                } else {
-                    reject(new Error('Login cancelado ou sem idToken'));
-                }
+        const handleResult = function(result) {
+            console.log('[Median] Google login result:', JSON.stringify(result));
+
+            if (!result) return reject(new Error('Resultado vazio'));
+
+            // Aceita idToken OU accessToken — Median pode retornar ambos
+            const token = result.idToken || result.id_token;
+            const accessToken = result.accessToken || result.access_token;
+
+            if (token) {
+                resolve({ idToken: token, accessToken, result });
+            } else if (accessToken) {
+                resolve({ idToken: null, accessToken, result });
+            } else if (result.error) {
+                reject(new Error(result.error));
+            } else {
+                reject(new Error('Sem token na resposta: ' + JSON.stringify(result)));
             }
-        });
+        };
+
+        // Tenta API nova (median.socialLogin.google)
+        if (bridge.socialLogin?.google?.login) {
+            bridge.socialLogin.google.login({ callback: handleResult });
+        }
+        // Tenta API alternativa (median.auth.google)
+        else if (bridge.auth?.google) {
+            bridge.auth.google({ callback: handleResult });
+        }
+        else {
+            reject(new Error('Nenhuma API de social login encontrada no bridge'));
+        }
     });
 }
 
@@ -42,26 +62,40 @@ function medianGoogleLogin() {
  *   • Browser normal → OAuth redirect padrão
  */
 export async function signInWithGoogle() {
-    // Fluxo nativo para app Median.co
+    // Fluxo nativo para app Median.co — SEM FALLBACK para OAuth
     if (isMedianApp()) {
         try {
-            const result = await medianGoogleLogin();
+            showToast('Autenticando com Google...', 'info');
+            const loginResult = await medianGoogleLogin();
 
-            const { error } = await supabase.auth.signInWithIdToken({
-                provider: 'google',
-                token: result.idToken,
-            });
+            if (loginResult.idToken) {
+                // Fluxo preferencial: idToken → signInWithIdToken
+                const { error } = await supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: loginResult.idToken,
+                });
+                if (error) throw error;
+            } else if (loginResult.accessToken) {
+                // Fallback: accessToken → signInWithIdToken com access_token
+                const { error } = await supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    access_token: loginResult.accessToken,
+                });
+                if (error) throw error;
+            } else {
+                throw new Error('Nenhum token obtido do login nativo');
+            }
 
-            if (error) throw error;
             window.location.href = '/';
-            return;
         } catch (e) {
-            console.warn('Login nativo Median falhou, tentando redirect:', e);
-            // Fallback: tenta o redirect normal
+            console.error('[Median] Login falhou:', e);
+            showToast('Erro no login: ' + e.message, 'error');
+            // NÃO faz fallback para OAuth redirect — isso abriria o browser externo
         }
+        return;
     }
 
-    // Fluxo padrão para browser
+    // Fluxo padrão para browser (não é Median)
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
