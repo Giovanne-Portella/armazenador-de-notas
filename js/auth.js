@@ -46,7 +46,11 @@ function medianGoogleLogin() {
             } else if (accessToken) {
                 resolve({ idToken: null, accessToken, result });
             } else if (result.error) {
-                reject(new Error(result.error));
+                let msg = result.error;
+                if (msg.toLowerCase().includes('cancel')) {
+                    msg = 'Login cancelado pelo Android. Configure o Web Client ID do Google no painel Median.co → Plugins → Social Login → Google.';
+                }
+                reject(new Error(msg));
             } else {
                 reject(new Error('Sem token: ' + JSON.stringify(result)));
             }

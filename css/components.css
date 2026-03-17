@@ -587,6 +587,17 @@ body.dark-mode .note-card[data-color="gray"]   { background: rgba(148, 163, 184,
 .toast-warning { border-left: 4px solid #f59e0b; }
 .toast-info { border-left: 4px solid #3b82f6; }
 
+/* Toast — centralizar no mobile (login.html não carrega responsive.css) */
+@media (max-width: 768px) {
+    .toast-container {
+        left: 0.5rem;
+        right: 0.5rem;
+    }
+    .toast {
+        max-width: 100%;
+    }
+}
+
 /* === COLUMN MANAGEMENT === */
 
 .column-header-actions {
