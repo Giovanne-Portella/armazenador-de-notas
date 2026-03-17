@@ -190,16 +190,17 @@ async function deleteCurrentColumn() {
    ========================================= */
 
 let currentReminderId = null;
+const shownReminders = new Set();
 
 function checkReminders() {
     const now = new Date();
     for (const note of state.notes) {
         if (!note.reminderAt) continue;
+        if (shownReminders.has(note.id)) continue;
         const reminderDate = new Date(note.reminderAt);
         if (reminderDate <= now) {
+            shownReminders.add(note.id);
             showReminderNotification(note);
-            clearNoteReminder(note.id);
-            note.reminderAt = null;
             break; // show one at a time
         }
     }
@@ -218,13 +219,20 @@ function showReminderNotification(note) {
     document.getElementById('reminderModal').classList.add('show');
 
     // Browser notification (if permission granted)
-    if (Notification.permission === 'granted') {
-        new Notification('🔔 Lembrete', { body: note.title, icon: '/favicon.ico' });
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            new Notification('🔔 Lembrete', { body: note.title, icon: '/favicon.png' });
+        } catch (_) { /* Notification API indisponível */ }
     }
 }
 
-function dismissReminder() {
+async function dismissReminder() {
     document.getElementById('reminderModal').classList.remove('show');
+    if (currentReminderId) {
+        clearNoteReminder(currentReminderId);
+        const note = state.notes.find(n => n.id === currentReminderId);
+        if (note) note.reminderAt = null;
+    }
     currentReminderId = null;
 }
 
@@ -240,10 +248,14 @@ function cancelSnooze() {
 
 async function snoozeReminder(minutes) {
     if (!currentReminderId) return;
+    const noteId = currentReminderId;
     const newTime = new Date(Date.now() + minutes * 60000).toISOString();
-    await setNoteReminder(currentReminderId, newTime);
+    await setNoteReminder(noteId, newTime);
+    shownReminders.delete(noteId);
     showToast(`Lembrete adiado para ${minutes} minutos`, 'success');
-    dismissReminder();
+    // Close modal without clearing reminder from DB
+    document.getElementById('reminderModal').classList.remove('show');
+    currentReminderId = null;
 }
 
 /* =========================================

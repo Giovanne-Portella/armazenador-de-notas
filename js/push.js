@@ -99,7 +99,7 @@ async function initWebPush() {
         return;
     }
     if (!('PushManager' in window)) {
-        showToast('Push não suportado neste navegador', 'warning');
+        console.log('[Push] PushManager não disponível neste navegador');
         return;
     }
 

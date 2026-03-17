@@ -19,8 +19,8 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
         self.registration.showNotification(data.title || '🔔 Lembrete', {
             body: data.body || '',
-            icon: '/favicon.ico',
-            badge: '/favicon.ico',
+            icon: '/favicon.png',
+            badge: '/favicon.png',
             tag: data.tag || 'reminder-' + Date.now(),
             data: { url: data.url || '/', noteId: data.noteId },
             vibrate: [200, 100, 200],
