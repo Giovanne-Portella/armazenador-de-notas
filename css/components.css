@@ -587,6 +587,69 @@ body.dark-mode .note-card[data-color="gray"]   { background: rgba(148, 163, 184,
 .toast-warning { border-left: 4px solid #f59e0b; }
 .toast-info { border-left: 4px solid #3b82f6; }
 
+/* === SNOOZE OPTIONS === */
+
+.snooze-options {
+    text-align: center;
+}
+
+.snooze-label {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary-light);
+}
+
+.dark-mode .snooze-label {
+    color: var(--text-primary-dark);
+}
+
+.snooze-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.snooze-grid button {
+    padding: 0.5rem 0.25rem;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--surface-light);
+    color: var(--text-primary-light);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.dark-mode .snooze-grid button {
+    border-color: var(--border-dark);
+    background: var(--surface-dark);
+    color: var(--text-primary-dark);
+}
+
+.snooze-grid button:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.text-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted-light);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.dark-mode .text-btn {
+    color: var(--text-muted-dark);
+}
+
+.text-btn:hover {
+    text-decoration: underline;
+}
+
 /* Toast — centralizar no mobile (login.html não carrega responsive.css) */
 @media (max-width: 768px) {
     .toast-container {

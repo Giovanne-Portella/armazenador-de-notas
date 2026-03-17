@@ -2,7 +2,7 @@
    APP — Ponto de entrada, inicialização, bindings globais
    ============================================ */
 
-import state, { loadState, upsertColumn, removeColumn, clearNoteReminder } from './state.js';
+import state, { loadState, upsertColumn, removeColumn, clearNoteReminder, setNoteReminder } from './state.js';
 import { initTheme } from './theme.js';
 import { requireAuth, signOut, onAuthStateChange } from './auth.js';
 import { toggleCollapsible, generateColorPaletteHTML, showToast, generateColumnId } from './utils.js';
@@ -93,6 +93,9 @@ window.deleteCurrentColumn = deleteCurrentColumn;
 
 // Lembrete
 window.dismissReminder = dismissReminder;
+window.showSnoozeOptions = showSnoozeOptions;
+window.cancelSnooze = cancelSnooze;
+window.snoozeReminder = snoozeReminder;
 
 // Utils
 window.toggleCollapsible = toggleCollapsible;
@@ -209,6 +212,9 @@ function showReminderNotification(note) {
         <p class="reminder-note-title"><strong>${note.title}</strong></p>
         <p class="reminder-note-group">${note.group || ''}</p>
     `;
+    // Mostra estado inicial (botões principais)
+    document.getElementById('reminderMainActions').style.display = '';
+    document.getElementById('reminderSnoozeActions').style.display = 'none';
     document.getElementById('reminderModal').classList.add('show');
 
     // Browser notification (if permission granted)
@@ -220,6 +226,24 @@ function showReminderNotification(note) {
 function dismissReminder() {
     document.getElementById('reminderModal').classList.remove('show');
     currentReminderId = null;
+}
+
+function showSnoozeOptions() {
+    document.getElementById('reminderMainActions').style.display = 'none';
+    document.getElementById('reminderSnoozeActions').style.display = '';
+}
+
+function cancelSnooze() {
+    document.getElementById('reminderSnoozeActions').style.display = 'none';
+    document.getElementById('reminderMainActions').style.display = '';
+}
+
+async function snoozeReminder(minutes) {
+    if (!currentReminderId) return;
+    const newTime = new Date(Date.now() + minutes * 60000).toISOString();
+    await setNoteReminder(currentReminderId, newTime);
+    showToast(`Lembrete adiado para ${minutes} minutos`, 'success');
+    dismissReminder();
 }
 
 /* =========================================

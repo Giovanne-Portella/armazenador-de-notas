@@ -38,6 +38,7 @@ export async function initPushNotifications() {
 
         // Pede permissão
         const permission = await Notification.requestPermission();
+        console.log('[Push] Permissão:', permission);
         if (permission !== 'granted') {
             console.log('[Push] Permissão de notificação negada');
             return;
@@ -45,6 +46,7 @@ export async function initPushNotifications() {
 
         // Verifica se já tem subscription
         let subscription = await registration.pushManager.getSubscription();
+        console.log('[Push] Subscription existente:', !!subscription);
 
         if (!subscription) {
             // Cria nova subscription
@@ -57,7 +59,6 @@ export async function initPushNotifications() {
 
         // Salva no Supabase
         await saveSubscription(subscription);
-        console.log('[Push] Subscription salva no Supabase');
 
     } catch (err) {
         console.error('[Push] Erro ao configurar push:', err);
@@ -69,10 +70,12 @@ export async function initPushNotifications() {
  */
 async function saveSubscription(subscription) {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { console.error('[Push] Usuário não autenticado'); return; }
 
     const sub = subscription.toJSON();
-    const { error } = await supabase
+    console.log('[Push] Salvando subscription para user:', user.id, 'endpoint:', sub.endpoint?.substring(0, 50));
+
+    const { data, error } = await supabase
         .from('push_subscriptions')
         .upsert({
             user_id: user.id,
@@ -80,7 +83,12 @@ async function saveSubscription(subscription) {
             p256dh: sub.keys.p256dh,
             auth: sub.keys.auth,
             updated_at: new Date().toISOString()
-        }, { onConflict: 'endpoint' });
+        }, { onConflict: 'endpoint' })
+        .select();
 
-    if (error) console.error('[Push] Erro ao salvar subscription:', error);
+    if (error) {
+        console.error('[Push] Erro ao salvar subscription:', error);
+    } else {
+        console.log('[Push] Subscription salva com sucesso:', data);
+    }
 }

@@ -288,3 +288,11 @@ export async function clearNoteReminder(noteId) {
     const { error } = await supabase.from('notes').update({ reminder_at: null }).eq('id', noteId);
     if (error) console.error('Erro ao limpar lembrete:', error);
 }
+
+export async function setNoteReminder(noteId, reminderAt) {
+    const { error } = await supabase.from('notes').update({ reminder_at: reminderAt }).eq('id', noteId);
+    if (error) console.error('Erro ao definir lembrete:', error);
+    // Atualiza no estado local
+    const note = state.notes.find(n => n.id === noteId);
+    if (note) note.reminderAt = reminderAt;
+}

@@ -403,8 +403,25 @@
             </div>
             <div class="modal-body">
                 <div id="reminderContent"></div>
-                <div class="modal-actions">
+
+                <!-- Ações principais -->
+                <div id="reminderMainActions" class="modal-actions">
                     <button class="success" onclick="dismissReminder()">Ok, entendi</button>
+                    <button class="secondary" onclick="showSnoozeOptions()">Adiar</button>
+                </div>
+
+                <!-- Opções de adiar -->
+                <div id="reminderSnoozeActions" class="snooze-options" style="display:none">
+                    <p class="snooze-label">Adiar por quanto tempo?</p>
+                    <div class="snooze-grid">
+                        <button onclick="snoozeReminder(5)">5 min</button>
+                        <button onclick="snoozeReminder(15)">15 min</button>
+                        <button onclick="snoozeReminder(30)">30 min</button>
+                        <button onclick="snoozeReminder(60)">1 hora</button>
+                        <button onclick="snoozeReminder(180)">3 horas</button>
+                        <button onclick="snoozeReminder(1440)">Amanhã</button>
+                    </div>
+                    <button class="text-btn" onclick="cancelSnooze()">Cancelar</button>
                 </div>
             </div>
         </div>
