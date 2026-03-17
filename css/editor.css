@@ -1,0 +1,304 @@
+/* ============================================
+   EDITOR — Toolbar, rich editor, blocos de análise, PDF export
+   ============================================ */
+
+/* === TOOLBAR DE FORMATAÇÃO === */
+
+.formatting-toolbar {
+    background: var(--toolbar-bg);
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.75rem;
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.dark-mode .formatting-toolbar {
+    background: var(--toolbar-dark);
+    border-color: var(--border-dark);
+}
+
+.toolbar-group {
+    display: flex;
+    gap: 2px;
+    padding-right: 0.5rem;
+    border-right: 1px solid var(--border-light);
+    margin-right: 0.35rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.toolbar-group:last-child {
+    border-right: none;
+    margin-right: 0;
+    padding-right: 0;
+}
+
+.dark-mode .toolbar-group {
+    border-right-color: var(--border-dark);
+}
+
+.toolbar-btn {
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 6px;
+    padding: 0.35rem;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-muted-light);
+    transition: all var(--transition-fast);
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    margin: 0;
+}
+
+.dark-mode .toolbar-btn {
+    color: var(--text-muted-dark);
+}
+
+.toolbar-btn:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-color: transparent;
+    transform: none;
+    box-shadow: none;
+}
+
+.toolbar-btn:active {
+    transform: scale(0.95);
+}
+
+.toolbar-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--button-hover);
+}
+
+.toolbar-select {
+    border: 1.5px solid var(--border-light);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    background: var(--surface-light);
+    color: var(--text-light);
+    font-size: 12px;
+    height: 32px;
+    transition: border-color var(--transition-fast);
+    cursor: pointer;
+}
+
+.toolbar-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.dark-mode .toolbar-select {
+    background: var(--surface-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+/* === EDITOR RICO === */
+
+.rich-editor {
+    min-height: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--surface-light);
+    color: var(--text-light);
+    margin-bottom: var(--spacing-md);
+    font-family: inherit;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 0.95rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dark-mode .rich-editor {
+    background: var(--surface-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+.rich-editor:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.rich-editor:empty::before {
+    content: 'Escreva o conteúdo da sua nota aqui...';
+    color: var(--text-muted-light);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.dark-mode .rich-editor:empty::before {
+    color: var(--text-muted-dark);
+}
+
+.rich-editor img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    margin: 4px 0;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+/* Smooth scrollbar inside editor */
+.rich-editor::-webkit-scrollbar {
+    width: 5px;
+}
+
+.rich-editor::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rich-editor::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 3px;
+}
+
+.dark-mode .rich-editor::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+}
+
+/* === BLOCOS DE ANÁLISE === */
+
+.block-wrapper {
+    border: 1.5px solid var(--border-light);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-md);
+    background: var(--surface-light);
+    transition: all var(--transition-normal);
+    overflow: hidden;
+}
+
+.block-wrapper:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.dark-mode .block-wrapper {
+    background: var(--surface-dark);
+    border-color: var(--border-dark);
+}
+
+.block-toolbar {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--toolbar-bg);
+}
+
+.dark-mode .block-toolbar {
+    border-color: var(--border-dark);
+    background: var(--toolbar-dark);
+}
+
+.block-toolbar button,
+.block-toolbar .toolbar-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    margin: 0;
+    box-shadow: none;
+    min-width: 30px;
+    height: 30px;
+}
+
+.drag-handle {
+    cursor: grab;
+    user-select: none;
+    padding: 0 0.4rem;
+    opacity: 0.4;
+    transition: opacity var(--transition-fast);
+}
+
+.drag-handle:hover {
+    opacity: 1;
+}
+
+.block-wrapper.dragging {
+    opacity: 0.5;
+    background: var(--primary-soft);
+}
+
+.block-content-editor {
+    min-height: 120px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-family: inherit;
+    line-height: 1.7;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+.block-content-editor:focus {
+    background: var(--primary-soft);
+}
+
+.dark-mode .block-content-editor {
+    color: var(--text-dark);
+    background: var(--surface-dark);
+}
+
+.dark-mode .block-content-editor:focus {
+    background: rgba(59, 130, 246, 0.05);
+}
+
+/* === SIDE NOTE INDICATOR === */
+
+.side-note-btn.has-note {
+    position: relative;
+}
+
+.side-note-btn.has-note::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
+}
+
+/* === PDF EXPORT CONTENT === */
+
+.pdf-export-content {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: white !important;
+    padding: 10px;
+    box-sizing: border-box;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.pdf-export-content * {
+    color: black !important;
+    background: transparent !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    font-family: inherit !important;
+}
+
+.pdf-export-content img {
+    max-width: 100% !important;
+    height: auto !important;
+}

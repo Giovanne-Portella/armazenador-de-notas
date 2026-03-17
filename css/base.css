@@ -1,0 +1,245 @@
+/* ============================================
+   ESTILOS BASE — Reset, body, tipografia, animações
+   ============================================ */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-light);
+    color: var(--text-light);
+    transition: background var(--transition-smooth), color var(--transition-smooth);
+    padding: var(--spacing-lg);
+    overflow-x: hidden;
+    line-height: 1.6;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.dark-mode {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+}
+
+/* === INPUTS === */
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--border-light);
+    margin-bottom: var(--spacing-md);
+    background: var(--surface-light);
+    color: var(--text-light);
+    font-family: inherit;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+    background: var(--surface-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+/* Fix native select dropdown options in dark mode */
+.dark-mode select option {
+    background: var(--surface-dark);
+    color: var(--text-dark);
+}
+
+select option {
+    background: var(--surface-light);
+    color: var(--text-light);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-muted-light);
+    opacity: 0.7;
+}
+
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+    color: var(--text-muted-dark);
+}
+
+input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* === BOTÕES === */
+
+button {
+    padding: 0.65rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin: 0.2rem;
+    background-color: var(--primary);
+    color: white;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+button:hover {
+    background-color: var(--button-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+button.danger {
+    background-color: var(--danger);
+}
+
+button.danger:hover {
+    background-color: var(--danger-hover);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+button.success {
+    background-color: var(--success);
+}
+
+button.success:hover {
+    background-color: var(--success-hover);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+button.warning {
+    background-color: var(--warning);
+    color: #1e293b;
+}
+
+button.warning:hover {
+    background-color: #d97706;
+}
+
+button.secondary {
+    background-color: #64748b;
+}
+
+button.secondary:hover {
+    background-color: #475569;
+}
+
+.btn-icon {
+    background: none;
+    border: 1.5px solid var(--border-light);
+    padding: 0.4rem;
+    min-width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    box-shadow: none;
+    transition: all var(--transition-fast);
+}
+
+.dark-mode .btn-icon {
+    border-color: var(--border-dark);
+    color: var(--text-dark);
+}
+
+.btn-icon:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-icon.danger:hover {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* === UTILITÁRIOS === */
+
+.hidden {
+    display: none !important;
+}
+
+.fade-in {
+    animation: fadeIn var(--transition-smooth);
+}
+
+.slide-in {
+    animation: slideIn var(--transition-smooth);
+}
+
+.slide-down {
+    animation: slideDown 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { max-height: 0; opacity: 0; }
+    to { max-height: 1000px; opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === FILE INPUT === */
+
+.image-upload {
+    display: none;
+}
