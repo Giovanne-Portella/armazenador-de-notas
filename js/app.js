@@ -31,7 +31,7 @@ import {
 import {
     showPDFExportModal, closePDFExportModal, exportNotesToPdf,
     openAnalysisExportModal, closeAnalysisExportModal,
-    toggleAllAnalysesForExport, exportAnalyses, importAnalysesJSON
+    toggleAllAnalysesForExport, exportAnalyses
 } from './export.js';
 
 /* =========================================
@@ -83,7 +83,6 @@ window.exportNotesToPdf = exportNotesToPdf;
 window.openAnalysisExportModal = openAnalysisExportModal;
 window.closeAnalysisExportModal = closeAnalysisExportModal;
 window.toggleAllAnalysesForExport = toggleAllAnalysesForExport;
-window.importAnalysesJSON = importAnalysesJSON;
 
 // Colunas
 window.openColumnModal = openColumnModal;

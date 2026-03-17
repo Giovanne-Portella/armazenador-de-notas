@@ -244,10 +244,7 @@
                 <h2 class="modal-title">Painel de Análises</h2>
                 <div class="modal-header-actions">
                     <button class="success" onclick="openAnalysisCreateModal()">➕ Adicionar Análise</button>
-                    <button class="warning" onclick="openAnalysisExportModal('pdf')">📄 Exportar PDF</button>
-                    <button class="secondary" onclick="openAnalysisExportModal('json')">💾 Exportar JSON</button>
-                    <input accept=".json" id="importAnalysesFile" onchange="importAnalysesJSON()" style="display:none;" type="file" />
-                    <button class="secondary" onclick="document.getElementById('importAnalysesFile').click()">📁 Importar JSON</button>
+                    <button class="warning" onclick="openAnalysisExportModal()">📄 Exportar PDF</button>
                     <button class="close-modal" onclick="closeAnalysisModal()">&times;</button>
                 </div>
             </div>

@@ -2,9 +2,7 @@
    EXPORT — Exportação de notas e análises (PDF)
    ============================================ */
 
-import state, { saveNotes, saveAnalyses, bulkInsertAnalyses } from './state.js';
-import { renderColumns } from './render.js';
-import { renderAnalysisBlocks } from './analysis.js';
+import state from './state.js';
 import { showToast } from './utils.js';
 
 /* =========================================
@@ -222,14 +220,14 @@ export async function exportNotesToPdf() {
    ANÁLISES — Export/Import
    ========================================= */
 
-export function openAnalysisExportModal(format) {
+export function openAnalysisExportModal() {
     const modal = document.getElementById('analysisExportModal');
     const title = document.getElementById('analysisExportModalTitle');
     const list = document.getElementById('analysisExportOptionsList');
     const btn = document.getElementById('confirmAnalysisExportBtn');
     const selectAllContainer = document.getElementById('selectAllContainer');
 
-    title.textContent = `Exportar Análises para ${format.toUpperCase()}`;
+    title.textContent = 'Exportar Análises para PDF';
 
     selectAllContainer.innerHTML = `
         <label>
@@ -252,7 +250,7 @@ export function openAnalysisExportModal(format) {
         });
     }
 
-    btn.onclick = () => exportAnalyses(format);
+    btn.onclick = () => exportAnalyses();
     modal.classList.add('show');
 }
 
@@ -324,7 +322,7 @@ function addCanvasSlicesToPdf(doc, canvas, currentY, margin, usableWidth) {
     return y;
 }
 
-export async function exportAnalyses(format) {
+export async function exportAnalyses() {
     const selectedIds = Array.from(document.querySelectorAll('.analysis-export-item:checked'))
         .map(cb => cb.value);
     const analysesToExport = state.analyses.filter(a => selectedIds.includes(a.id));
@@ -334,8 +332,7 @@ export async function exportAnalyses(format) {
         return;
     }
 
-    if (format === 'pdf') {
-        const { jsPDF } = window.jspdf;
+    const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
         const margin = 15;
@@ -421,45 +418,6 @@ export async function exportAnalyses(format) {
         }
         doc.save('analises.pdf');
 
-    } else if (format === 'json') {
-        const blob = new Blob([JSON.stringify(analysesToExport, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'analises.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
     closeAnalysisExportModal();
-}
-
-export function importAnalysesJSON() {
-    const file = document.getElementById('importAnalysesFile').files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            if (!Array.isArray(importedData)) throw new Error('O arquivo JSON não é um array válido.');
-
-            const newAnalyses = importedData.map(analysis => ({
-                id: crypto.randomUUID(),
-                title: analysis.title || 'Análise Importada',
-                blocks: analysis.blocks && analysis.blocks.length > 0 ? analysis.blocks : [{ id: Date.now(), content: '' }],
-                createdAt: analysis.createdAt || new Date().toISOString()
-            }));
-
-            state.analyses.push(...newAnalyses);
-            saveAnalyses();
-            bulkInsertAnalyses(newAnalyses);
-            renderAnalysisBlocks();
-            showToast(`${newAnalyses.length} análise(s) importada(s) com sucesso!`, 'success');
-        } catch (error) {
-            showToast('Erro ao importar arquivo: ' + error.message, 'error');
-        }
-    };
-    reader.readAsText(file);
-    document.getElementById('importAnalysesFile').value = '';
+    showToast('PDF de análises exportado com sucesso!', 'success');
 }
