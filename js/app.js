@@ -229,7 +229,7 @@ function showReminderNotification(note) {
 async function dismissReminder() {
     document.getElementById('reminderModal').classList.remove('show');
     if (currentReminderId) {
-        clearNoteReminder(currentReminderId);
+        await clearNoteReminder(currentReminderId);
         const note = state.notes.find(n => n.id === currentReminderId);
         if (note) note.reminderAt = null;
     }

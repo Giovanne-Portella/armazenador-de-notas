@@ -212,7 +212,11 @@ export async function upsertNote(note) {
         reminder_at: note.reminderAt || null,
         created_at: note.createdAt
     });
-    if (error) console.error('Erro ao salvar nota:', error);
+    if (error) {
+        console.error('Erro ao salvar nota:', error);
+        const { showToast } = await import('./utils.js');
+        showToast('Erro ao salvar nota: ' + error.message, 'error');
+    }
 }
 
 export async function removeNote(noteId) {

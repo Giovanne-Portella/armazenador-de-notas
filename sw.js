@@ -2,7 +2,7 @@
    SERVICE WORKER — Push Notifications + Cache
    ============================================ */
 
-const CACHE_NAME = 'notas-v1';
+const CACHE_NAME = 'notas-v2';
 
 // Recebe push do servidor e exibe notificação nativa
 self.addEventListener('push', (event) => {

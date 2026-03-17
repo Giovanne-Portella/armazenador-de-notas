@@ -104,7 +104,7 @@ export default async (req) => {
     }
 };
 
-// Schedule: roda a cada minuto
+// Schedule: roda a cada hora (minuto 0)
 export const config = {
-    schedule: "* * * * *"
+    schedule: "0 * * * *"
 };

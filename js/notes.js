@@ -55,7 +55,7 @@ export function closeModal() {
 /**
  * Salva nota (cria ou atualiza)
  */
-export function saveNote() {
+export async function saveNote() {
     const title = document.getElementById('modalTitleInput').value;
     const content = document.getElementById('modalContentEditor').innerHTML;
     const group = document.getElementById('modalGroupInput').value;
@@ -80,7 +80,7 @@ export function saveNote() {
             note.color = color;
             note.status = status;
             note.reminderAt = reminderAt;
-            upsertNote(note);
+            await upsertNote(note);
         }
     } else {
         const newNote = {
@@ -94,7 +94,7 @@ export function saveNote() {
             createdAt: new Date().toISOString()
         };
         state.notes.push(newNote);
-        upsertNote(newNote);
+        await upsertNote(newNote);
     }
 
     saveNotes();
