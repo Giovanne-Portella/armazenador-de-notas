@@ -129,18 +129,31 @@ Configure as variáveis de ambiente no Netlify para push notifications:
 ├── login.html              ← Login Google OAuth
 ├── sw.js                   ← Service Worker (push + cache)
 ├── css/                    ← 9 arquivos CSS organizados
-│   ├── variables.css       ← Temas e variáveis
-│   ├── mindmap.css         ← Estilos do mapa mental
+│   ├── variables.css       ← Temas e variáveis CSS
+│   ├── base.css            ← Reset e estilos globais
+│   ├── layout.css          ← Header, colunas, kanban
 │   ├── components.css      ← Cards, amigos, pull-refresh
+│   ├── editor.css          ← Rich text editor
+│   ├── modal.css           ← Modais e overlays
+│   ├── login.css           ← Tela de login
+│   ├── mindmap.css         ← Estilos do mapa mental
 │   └── responsive.css      ← Breakpoints mobile
 ├── js/                     ← 15 módulos ES Module
 │   ├── app.js              ← Entry point e inicialização
-│   ├── state.js            ← Estado + CRUD Supabase + SWR
+│   ├── state.js            ← Estado centralizado + CRUD Supabase + SWR
 │   ├── cache.js            ← Cache stale-while-revalidate (sessionStorage)
+│   ├── auth.js             ← Google OAuth login/logout, session
+│   ├── notes.js            ← CRUD de notas (UUID)
+│   ├── editor.js           ← Rich text (formatação, cores, imagens)
+│   ├── render.js           ← Renderização de colunas, stats, drag & drop
+│   ├── analysis.js         ← CRUD de análises, blocos, side notes
 │   ├── mindmap.js          ← Motor do mapa mental (SVG, CRUD, PDF export)
 │   ├── friends.js          ← Amizades e compartilhamento
+│   ├── export.js           ← Exportação PDF/JSON de notas
 │   ├── push.js             ← Web Push subscription
-│   └── ...
+│   ├── theme.js            ← Dark mode e seleção de temas
+│   ├── supabase.js         ← Client Supabase (URL + anon key)
+│   └── utils.js            ← Constantes, paleta de cores, helpers
 ├── netlify/functions/
 │   └── check-reminders.mjs ← Cron (1h) para push reminders
 └── docs/
