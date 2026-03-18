@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Mapa Mental - Tools Supp Robbu</title>
+
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- Bibliotecas externas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- CSS Compartilhado (variáveis e temas) -->
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/mindmap.css" />
+</head>
+<body>
+
+    <!-- Aplica dark mode / tema antes de renderizar -->
+    <script>
+        if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+        var st = localStorage.getItem('selectedTheme');
+        if (st) document.body.classList.add(st);
+    </script>
+
+    <!-- ========== LOADING ========== -->
+    <div id="appLoading" class="app-loading">
+        <div class="app-loading-inner">
+            <span class="app-loading-emoji">🗺️</span>
+            <div class="app-loading-spinner"></div>
+            <p>Carregando mapa mental...</p>
+        </div>
+    </div>
+
+    <!-- ========== CONTEÚDO ========== -->
+    <div id="appContent" style="display: none;">
+
+        <!-- ========== HEADER ========== -->
+        <header class="mm-header">
+            <div class="mm-header-left">
+                <a href="index.html" class="mm-back-btn" title="Voltar para Notas">←</a>
+                <button class="mm-sidebar-toggle" onclick="toggleSidebar()" title="Meus Mapas">☰</button>
+                <h1 class="mm-title" id="currentMapTitle">Mapa Mental</h1>
+            </div>
+            <div class="mm-header-right">
+                <span class="mm-save-status" id="saveStatus">Salvo</span>
+                <select id="themeSelector" class="mm-theme-select">
+                    <option value="">Tema Padrão</option>
+                    <option value="theme-blue">Azul</option>
+                    <option value="theme-green">Verde</option>
+                    <option value="theme-red">Vermelho</option>
+                    <option value="theme-orange">Laranja</option>
+                    <option value="theme-purple">Roxo</option>
+                </select>
+                <button class="btn-icon" id="darkModeToggle" title="Alternar modo escuro">🌙</button>
+                <img id="userAvatar" class="user-avatar" alt="Avatar" />
+            </div>
+        </header>
+
+        <!-- ========== SIDEBAR: Lista de Mapas ========== -->
+        <aside class="mm-sidebar" id="sidebar">
+            <div class="mm-sidebar-header">
+                <h2>Meus Mapas</h2>
+                <button class="mm-sidebar-new" onclick="createNewMap()" title="Novo Mapa">+ Novo</button>
+            </div>
+            <div class="mm-sidebar-list" id="mapList"></div>
+        </aside>
+        <div class="mm-sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <!-- ========== CANVAS SVG ========== -->
+        <main class="mm-canvas-wrapper" id="canvasWrapper">
+            <svg id="mmCanvas" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Grid pattern -->
+                    <pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+                        <circle cx="12" cy="12" r="1" class="mm-grid-dot" />
+                    </pattern>
+                    <!-- Arrow marker -->
+                    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto" markerUnits="strokeWidth">
+                        <path d="M 0 0 L 12 4 L 0 8 Z" class="mm-arrow" />
+                    </marker>
+                </defs>
+                <g id="canvasGroup">
+                    <rect id="gridRect" x="-5000" y="-5000" width="10000" height="10000" fill="url(#dotGrid)" />
+                    <g id="connectionsLayer"></g>
+                    <g id="nodesLayer"></g>
+                    <g id="tempLayer"></g>
+                </g>
+            </svg>
+
+            <!-- Editor de texto overlay -->
+            <textarea id="nodeTextEditor" class="mm-text-editor" style="display:none;"></textarea>
+        </main>
+
+        <!-- ========== TOOLBAR FLUTUANTE ========== -->
+        <div class="mm-toolbar" id="toolbar">
+            <div class="mm-toolbar-group">
+                <button class="mm-tool active" data-tool="select" title="Selecionar (V)">
+                    <span class="mm-tool-icon">🖱️</span>
+                    <span class="mm-tool-label">Selecionar</span>
+                </button>
+                <button class="mm-tool" data-tool="add" title="Adicionar Nó (N)">
+                    <span class="mm-tool-icon">➕</span>
+                    <span class="mm-tool-label">Nó</span>
+                </button>
+                <button class="mm-tool" data-tool="connect" title="Conectar Nós (C)">
+                    <span class="mm-tool-icon">🔗</span>
+                    <span class="mm-tool-label">Conectar</span>
+                </button>
+            </div>
+            <div class="mm-toolbar-divider"></div>
+            <div class="mm-toolbar-group">
+                <button class="mm-tool" onclick="deleteSelected()" title="Deletar (Del)">
+                    <span class="mm-tool-icon">🗑️</span>
+                    <span class="mm-tool-label">Deletar</span>
+                </button>
+                <button class="mm-tool" onclick="manualSave()" title="Salvar (Ctrl+S)">
+                    <span class="mm-tool-icon">💾</span>
+                    <span class="mm-tool-label">Salvar</span>
+                </button>
+                <button class="mm-tool" onclick="exportPDF()" title="Exportar PDF">
+                    <span class="mm-tool-icon">📄</span>
+                    <span class="mm-tool-label">PDF</span>
+                </button>
+            </div>
+            <div class="mm-toolbar-divider"></div>
+            <div class="mm-toolbar-group">
+                <button class="mm-tool" onclick="zoomOut()" title="Zoom -">
+                    <span class="mm-tool-icon">➖</span>
+                </button>
+                <span class="mm-zoom-label" id="zoomLabel">100%</span>
+                <button class="mm-tool" onclick="zoomIn()" title="Zoom +">
+                    <span class="mm-tool-icon">➕</span>
+                </button>
+                <button class="mm-tool" onclick="fitView()" title="Ajustar vista (Ctrl+0)">
+                    <span class="mm-tool-icon">🏠</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== PAINEL DE PROPRIEDADES ========== -->
+        <div class="mm-properties" id="propertiesPanel" style="display:none;">
+            <div class="mm-prop-header">
+                <h3>Propriedades</h3>
+                <button class="mm-prop-close" onclick="closeProperties()">&times;</button>
+            </div>
+            <div class="mm-prop-body">
+                <label class="mm-prop-label">Texto</label>
+                <textarea id="propText" class="mm-prop-input" rows="3" placeholder="Texto do nó..."></textarea>
+
+                <label class="mm-prop-label">Cor</label>
+                <div class="mm-color-options" id="propColors"></div>
+
+                <label class="mm-prop-label">Forma</label>
+                <div class="mm-shape-options" id="propShapes">
+                    <button class="mm-shape-btn" data-shape="rounded" title="Arredondado">
+                        <svg viewBox="0 0 32 24"><rect x="1" y="1" width="30" height="22" rx="6" ry="6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    </button>
+                    <button class="mm-shape-btn" data-shape="rectangle" title="Retângulo">
+                        <svg viewBox="0 0 32 24"><rect x="1" y="1" width="30" height="22" rx="1" ry="1" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    </button>
+                    <button class="mm-shape-btn" data-shape="diamond" title="Losango">
+                        <svg viewBox="0 0 32 24"><polygon points="16,1 31,12 16,23 1,12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    </button>
+                    <button class="mm-shape-btn" data-shape="circle" title="Círculo">
+                        <svg viewBox="0 0 32 24"><ellipse cx="16" cy="12" rx="15" ry="11" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    </button>
+                </div>
+
+                <label class="mm-prop-label">Vincular a</label>
+                <select id="propLink" class="mm-prop-input">
+                    <option value="">Sem vínculo</option>
+                    <optgroup label="📝 Notas" id="propLinkNotes"></optgroup>
+                    <optgroup label="📊 Análises" id="propLinkAnalyses"></optgroup>
+                </select>
+            </div>
+        </div>
+
+        <!-- ========== TOAST CONTAINER ========== -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Modal tema mobile (simplificado) -->
+        <div class="modal" id="themeMobileModal">
+            <div class="modal-content" style="max-width:340px;">
+                <div class="modal-header">
+                    <h2 class="modal-title">Aparência</h2>
+                    <button class="close-modal" onclick="closeThemeMobileModal()" type="button">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:1rem;">
+                    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                        <button id="lightModeBtn" class="theme-mode-btn active" onclick="setDarkMode(false)">☀️ Claro</button>
+                        <button id="darkModeBtn" class="theme-mode-btn" onclick="setDarkMode(true)">🌙 Escuro</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;">
+                        <button class="theme-option" data-theme="" onclick="selectThemeMobile('')">🎨 Padrão</button>
+                        <button class="theme-option" data-theme="theme-blue" onclick="selectThemeMobile('theme-blue')">🔵 Azul</button>
+                        <button class="theme-option" data-theme="theme-green" onclick="selectThemeMobile('theme-green')">🟢 Verde</button>
+                        <button class="theme-option" data-theme="theme-red" onclick="selectThemeMobile('theme-red')">🔴 Vermelho</button>
+                        <button class="theme-option" data-theme="theme-orange" onclick="selectThemeMobile('theme-orange')">🟠 Laranja</button>
+                        <button class="theme-option" data-theme="theme-purple" onclick="selectThemeMobile('theme-purple')">🟣 Roxo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== SCRIPTS ========== -->
+    <script type="module" src="js/mindmap.js"></script>
+</body>
+</html>

@@ -4,6 +4,7 @@
 
 import { supabase } from './supabase.js';
 import { DEFAULT_COLUMNS } from './utils.js';
+import { cacheGet, cacheSet, cacheInvalidate } from './cache.js';
 
 const state = {
     notes: [],
@@ -56,7 +57,7 @@ function mapColumnFromDb(c) {
 }
 
 /* =========================================
-   Carregar estado do Supabase
+   Carregar estado do Supabase (com cache stale-while-revalidate)
    ========================================= */
 
 export async function loadState() {
@@ -64,83 +65,86 @@ export async function loadState() {
     if (!user) return;
     state.user = user;
 
-    // Carregar notas próprias
-    const { data: notes, error: notesErr } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
+    // Verifica cache das três entidades principais
+    const cachedNotes    = cacheGet('notes', user.id);
+    const cachedAnalyses = cacheGet('analyses', user.id);
+    const cachedColumns  = cacheGet('columns', user.id);
 
-    if (notesErr) {
-        console.error('Erro ao carregar notas:', notesErr);
+    const hasCachedData = cachedNotes && cachedAnalyses && cachedColumns;
+
+    if (hasCachedData) {
+        // Serve do cache imediatamente
+        _applyLoadedData(user, cachedNotes.data, cachedAnalyses.data, cachedColumns.data);
+
+        // Se algum cache está stale, revalida silenciosamente em background
+        if (cachedNotes.stale || cachedAnalyses.stale || cachedColumns.stale) {
+            _fetchAndCache(user).then(({ notes, analyses, columns }) => {
+                if (notes || analyses || columns) {
+                    _applyLoadedData(user, notes, analyses, columns);
+                    // Dispara evento para que a UI possa re-renderizar
+                    window.dispatchEvent(new CustomEvent('stateRevalidated'));
+                }
+            }).catch(() => {});
+        }
     } else {
-        state.notes = (notes || []).map(mapNoteFromDb);
+        // Sem cache — carrega da rede e aguarda
+        const fresh = await _fetchAndCache(user);
+        _applyLoadedData(user, fresh.notes, fresh.analyses, fresh.columns);
     }
 
-    // Carregar notas compartilhadas comigo
-    const { data: shares, error: sharesErr } = await supabase
-        .from('note_shares')
-        .select('note_id, shared_by')
-        .eq('user_id', user.id);
+    await migrateLocalStorage(user.id);
+}
 
-    if (!sharesErr && shares && shares.length > 0) {
+async function _fetchAndCache(user) {
+    const [notesRes, sharesRes, analysesRes, columnsRes] = await Promise.all([
+        supabase.from('notes').select('*').eq('user_id', user.id).order('created_at', { ascending: true }),
+        supabase.from('note_shares').select('note_id, shared_by').eq('user_id', user.id),
+        supabase.from('analyses').select('*').order('created_at', { ascending: true }),
+        supabase.from('columns').select('*').order('position', { ascending: true })
+    ]);
+
+    // Notas compartilhadas
+    let allNotes = (notesRes.data || []).map(mapNoteFromDb);
+    const shares = sharesRes.data || [];
+    if (shares.length > 0) {
         const sharedIds = shares.map(s => s.note_id);
         const { data: sharedNotes } = await supabase
-            .from('notes')
-            .select('*')
-            .in('id', sharedIds)
-            .order('created_at', { ascending: true });
-
+            .from('notes').select('*').in('id', sharedIds).order('created_at', { ascending: true });
         if (sharedNotes) {
-            const sharedMapped = sharedNotes.map(n => ({
-                ...mapNoteFromDb(n),
-                isShared: true
-            }));
-            // Evitar duplicatas
-            const existingIds = new Set(state.notes.map(n => n.id));
-            for (const sn of sharedMapped) {
-                if (!existingIds.has(sn.id)) {
-                    state.notes.push(sn);
-                }
+            const existingIds = new Set(allNotes.map(n => n.id));
+            for (const sn of sharedNotes) {
+                if (!existingIds.has(sn.id)) allNotes.push({ ...mapNoteFromDb(sn), isShared: true });
             }
         }
     }
 
-    const { data: analyses, error: analysesErr } = await supabase
-        .from('analyses')
-        .select('*')
-        .order('created_at', { ascending: true });
+    const analyses = (analysesRes.data || []).map(mapAnalysisFromDb);
+    const columns  = (columnsRes.data || []).map(mapColumnFromDb);
 
-    if (analysesErr) {
-        console.error('Erro ao carregar análises:', analysesErr);
-    } else {
-        state.analyses = (analyses || []).map(mapAnalysisFromDb);
-    }
+    // Salva no cache
+    cacheSet('notes',    user.id, allNotes);
+    cacheSet('analyses', user.id, analyses);
+    cacheSet('columns',  user.id, columns);
 
-    // Carregar colunas customizáveis
-    const { data: columns, error: columnsErr } = await supabase
-        .from('columns')
-        .select('*')
-        .order('position', { ascending: true });
+    return { notes: allNotes, analyses, columns };
+}
 
-    if (columnsErr) {
-        console.error('Erro ao carregar colunas:', columnsErr);
-    }
+function _applyLoadedData(user, notes, analyses, columns) {
+    state.notes    = notes    || state.notes;
+    state.analyses = analyses || state.analyses;
 
     if (!columns || columns.length === 0) {
-        // Seed com colunas padrão
-        await seedDefaultColumns(user.id);
+        if (state.columns.length === 0) seedDefaultColumns(user.id);
     } else {
-        state.columns = columns.map(mapColumnFromDb);
+        state.columns = columns;
     }
 
-    // Se há notas compartilhadas, garantir coluna "Compartilhadas"
-    if (state.notes.some(n => n.isShared)) {
-        await ensureSharedColumn(user.id);
+    // Garantir coluna "Compartilhadas" se necessário
+    if (state.notes.some(n => n.isShared) && !state.columns.some(c => c.id === 'compartilhadas')) {
+        ensureSharedColumn(user.id);
     }
 
-    // Notas compartilhadas sempre ficam em "Compartilhadas"
-    // Se o criador concluiu, marcamos isSharedCompleted para exibir como concluída
+    // Marcar notas compartilhadas
     const doneColIds = new Set(state.columns.filter(c => c.isDone).map(c => c.id));
     for (const note of state.notes) {
         if (note.isShared) {
@@ -148,8 +152,6 @@ export async function loadState() {
             note.status = 'compartilhadas';
         }
     }
-
-    await migrateLocalStorage(user.id);
 }
 
 /* =========================================
@@ -287,12 +289,15 @@ export async function upsertNote(note) {
         console.error('Erro ao salvar nota:', error);
         const { showToast } = await import('./utils.js');
         showToast('Erro ao salvar nota: ' + error.message, 'error');
+    } else {
+        cacheInvalidate('notes', state.user.id);
     }
 }
 
 export async function removeNote(noteId) {
     const { error } = await supabase.from('notes').delete().eq('id', noteId);
     if (error) console.error('Erro ao deletar nota:', error);
+    else cacheInvalidate('notes', state.user.id);
 }
 
 export async function upsertAnalysis(analysis) {
@@ -304,11 +309,13 @@ export async function upsertAnalysis(analysis) {
         created_at: analysis.createdAt
     });
     if (error) console.error('Erro ao salvar análise:', error);
+    else cacheInvalidate('analyses', state.user.id);
 }
 
 export async function removeAnalysis(analysisId) {
     const { error } = await supabase.from('analyses').delete().eq('id', analysisId);
     if (error) console.error('Erro ao deletar análise:', error);
+    else cacheInvalidate('analyses', state.user.id);
 }
 
 export async function bulkInsertNotes(notes) {
@@ -325,6 +332,7 @@ export async function bulkInsertNotes(notes) {
     }));
     const { error } = await supabase.from('notes').insert(rows);
     if (error) console.error('Erro ao importar notas:', error);
+    else cacheInvalidate('notes', state.user.id);
 }
 
 export async function bulkInsertAnalyses(analyses) {
@@ -337,6 +345,7 @@ export async function bulkInsertAnalyses(analyses) {
     }));
     const { error } = await supabase.from('analyses').insert(rows);
     if (error) console.error('Erro ao importar análises:', error);
+    else cacheInvalidate('analyses', state.user.id);
 }
 
 /* =========================================
@@ -352,22 +361,27 @@ export async function upsertColumn(column) {
         is_done: column.isDone
     });
     if (error) console.error('Erro ao salvar coluna:', error);
+    else cacheInvalidate('columns', state.user.id);
 }
 
 export async function removeColumn(columnId) {
     const { error } = await supabase.from('columns').delete().eq('id', columnId);
     if (error) console.error('Erro ao deletar coluna:', error);
+    else cacheInvalidate('columns', state.user.id);
 }
 
 export async function clearNoteReminder(noteId) {
     const { error } = await supabase.from('notes').update({ reminder_at: null }).eq('id', noteId);
     if (error) console.error('Erro ao limpar lembrete:', error);
+    else cacheInvalidate('notes', state.user.id);
 }
 
 export async function setNoteReminder(noteId, reminderAt) {
     const { error } = await supabase.from('notes').update({ reminder_at: reminderAt }).eq('id', noteId);
     if (error) console.error('Erro ao definir lembrete:', error);
-    // Atualiza no estado local
-    const note = state.notes.find(n => n.id === noteId);
-    if (note) note.reminderAt = reminderAt;
+    else {
+        cacheInvalidate('notes', state.user.id);
+        const note = state.notes.find(n => n.id === noteId);
+        if (note) note.reminderAt = reminderAt;
+    }
 }

@@ -340,6 +340,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (loading) loading.style.display = 'none';
     if (appContent) appContent.style.display = '';
 
+    // Re-renderizar quando cache stale for revalidado em background
+    window.addEventListener('stateRevalidated', () => {
+        renderColumns();
+        updateStats();
+        setupFilters();
+    });
+
     onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
             window.location.href = '/login.html';
