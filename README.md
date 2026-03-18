@@ -1,6 +1,6 @@
 # 📋 Armazenador de Notas
 
-Aplicação web Kanban para gerenciamento de notas e análises com compartilhamento entre amigos, push notifications e exportação PDF.
+Aplicação web Kanban para gerenciamento de notas e análises com mapa mental interativo, compartilhamento entre amigos, push notifications e exportação PDF.
 
 🔗 **Acesse agora:** [salvar-notas.netlify.app](https://salvar-notas.netlify.app)
 
@@ -18,10 +18,12 @@ Aplicação web Kanban para gerenciamento de notas e análises com compartilhame
 - **Rich Text Editor** — Formatação de texto, cores, imagens com resize inline
 - **6 temas + Dark Mode** — Glassmorphism, gradientes e personalização visual
 - **Análises com blocos** — Documentos com blocos rearranjaveis e anotações laterais
+- **Mapa Mental interativo** — Canvas SVG infinito com pan/zoom, nós, conexões bezier, vínculos com notas/análises e exportação PDF Full HD
 - **Push Notifications** — Lembretes nativos com snooze (5/15/30/60 min)
 - **Sistema de amigos** — Busca por email, envio/aceite de solicitações
 - **Compartilhamento de notas** — Compartilhe notas com amigos para visualização colaborativa
 - **Exportação PDF e JSON** — Relatórios formatados e backup/restore completo
+- **Cache stale-while-revalidate** — sessionStorage com TTL 2min reduz requisições em navegação e reload
 - **Pull-to-refresh** — Atualização de notas no mobile com gesto nativo
 - **Responsivo** — Funciona em desktop, tablet e mobile (breakpoints 768px / 380px)
 - **Login com Google** — Autenticação segura via OAuth 2.0
@@ -40,7 +42,8 @@ Aplicação web Kanban para gerenciamento de notas e análises com compartilhame
 | Backend/DB | Supabase (PostgreSQL + Auth + RLS) |
 | Autenticação | Google OAuth 2.0 via Supabase |
 | Push | Web Push API + Service Worker |
-| PDF | jsPDF + html2canvas |
+| PDF (notas) | jsPDF + html2canvas |
+| PDF (mapa mental) | jsPDF + SVG standalone (canvas 2x) |
 | Deploy | Netlify (auto-deploy via GitHub) |
 
 ## 🚀 Como rodar localmente
@@ -108,7 +111,7 @@ Acesse `http://localhost:5500` e faça login com Google.
 
 ```bash
 # Faça push para o GitHub — o Netlify faz deploy automático
-git push origin master
+git push origin main
 ```
 
 Configure as variáveis de ambiente no Netlify para push notifications:
@@ -121,26 +124,31 @@ Configure as variáveis de ambiente no Netlify para push notifications:
 ## 📁 Estrutura do Projeto
 
 ```
-├── index.html              ← App principal
+├── index.html              ← App principal (Kanban)
+├── mindmap.html            ← App de mapa mental (canvas SVG)
 ├── login.html              ← Login Google OAuth
 ├── sw.js                   ← Service Worker (push + cache)
-├── css/                    ← 8 arquivos CSS organizados
+├── css/                    ← 9 arquivos CSS organizados
 │   ├── variables.css       ← Temas e variáveis
+│   ├── mindmap.css         ← Estilos do mapa mental
 │   ├── components.css      ← Cards, amigos, pull-refresh
 │   └── responsive.css      ← Breakpoints mobile
-├── js/                     ← 13 módulos ES Module
+├── js/                     ← 15 módulos ES Module
 │   ├── app.js              ← Entry point e inicialização
-│   ├── state.js            ← Estado + CRUD Supabase
+│   ├── state.js            ← Estado + CRUD Supabase + SWR
+│   ├── cache.js            ← Cache stale-while-revalidate (sessionStorage)
+│   ├── mindmap.js          ← Motor do mapa mental (SVG, CRUD, PDF export)
 │   ├── friends.js          ← Amizades e compartilhamento
 │   ├── push.js             ← Web Push subscription
 │   └── ...
 ├── netlify/functions/
 │   └── check-reminders.mjs ← Cron (1h) para push reminders
 └── docs/
-    ├── AI_CONTEXT.md        ← Contexto completo para IA
-    ├── SUPABASE_SETUP.md    ← Guia de configuração
-    ├── MODULARIZATION.md    ← Histórico e roadmap
-    └── FRIENDS_MIGRATION.sql← SQL do sistema de amigos
+    ├── AI_CONTEXT.md           ← Contexto completo para IA
+    ├── SUPABASE_SETUP.md       ← Guia de configuração
+    ├── MODULARIZATION.md       ← Histórico e roadmap
+    ├── FRIENDS_MIGRATION.sql   ← SQL do sistema de amigos
+    └── MINDMAP_MIGRATION.sql   ← SQL da tabela mindmaps
 ```
 
 ## 🔒 Segurança
