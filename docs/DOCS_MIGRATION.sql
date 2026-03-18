@@ -15,6 +15,21 @@ CREATE TABLE IF NOT EXISTS documents (
 
 CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
 
+-- 2. Tabela de compartilhamentos (criada antes das policies de documents)
+CREATE TABLE IF NOT EXISTS document_shares (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    shared_with_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    can_edit BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(document_id, shared_with_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_doc_shares_shared ON document_shares(shared_with_id);
+CREATE INDEX IF NOT EXISTS idx_doc_shares_document ON document_shares(document_id);
+
+-- 3. RLS e policies de documents
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 
 -- Owner: acesso total
@@ -35,20 +50,7 @@ CREATE POLICY "Documents: shared edit" ON documents
         id IN (SELECT document_id FROM document_shares WHERE shared_with_id = auth.uid() AND can_edit = true)
     );
 
--- 2. Tabela de compartilhamentos
-CREATE TABLE IF NOT EXISTS document_shares (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
-    owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    shared_with_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    can_edit BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(document_id, shared_with_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_doc_shares_shared ON document_shares(shared_with_id);
-CREATE INDEX IF NOT EXISTS idx_doc_shares_document ON document_shares(document_id);
-
+-- 4. RLS e policies de document_shares
 ALTER TABLE document_shares ENABLE ROW LEVEL SECURITY;
 
 -- Owner gerencia compartilhamentos
