@@ -22,6 +22,7 @@ Aplicação web Kanban para gerenciamento de notas e análises com mapa mental i
 - **Push Notifications** — Lembretes nativos com snooze (5/15/30/60 min)
 - **Sistema de amigos** — Busca por email, envio/aceite de solicitações
 - **Compartilhamento de notas** — Compartilhe notas com amigos para visualização colaborativa
+- **Documentação colaborativa** — Editor rich text completo com sumário (TOC), compartilhamento com amigos (leitura/edição), paste de imagens e auto-save
 - **Exportação PDF e JSON** — Relatórios formatados e backup/restore completo
 - **Cache stale-while-revalidate** — sessionStorage com TTL 2min reduz requisições em navegação e reload
 - **Pull-to-refresh** — Atualização de notas no mobile com gesto nativo
@@ -71,6 +72,12 @@ Crie as tabelas executando os scripts SQL no Supabase Dashboard:
 
 # Sistema de amigos (profiles, friendships, note_shares)  
 # → Copie o SQL de docs/FRIENDS_MIGRATION.sql e execute no SQL Editor
+
+# Mapa mental (mindmaps)
+# → Copie o SQL de docs/MINDMAP_MIGRATION.sql e execute no SQL Editor
+
+# Documentação colaborativa (documents, document_shares)
+# → Copie o SQL de docs/DOCS_MIGRATION.sql e execute no SQL Editor
 ```
 
 ### 3. Configure as credenciais
@@ -126,9 +133,10 @@ Configure as variáveis de ambiente no Netlify para push notifications:
 ```
 ├── index.html              ← App principal (Kanban)
 ├── mindmap.html            ← App de mapa mental (canvas SVG)
+├── docs.html               ← Documentação colaborativa (rich text + TOC)
 ├── login.html              ← Login Google OAuth
 ├── sw.js                   ← Service Worker (push + cache)
-├── css/                    ← 9 arquivos CSS organizados
+├── css/                    ← 10 arquivos CSS organizados
 │   ├── variables.css       ← Temas e variáveis CSS
 │   ├── base.css            ← Reset e estilos globais
 │   ├── layout.css          ← Header, colunas, kanban
@@ -151,6 +159,7 @@ Configure as variáveis de ambiente no Netlify para push notifications:
 │   ├── friends.js          ← Amizades e compartilhamento
 │   ├── export.js           ← Exportação PDF/JSON de notas
 │   ├── push.js             ← Web Push subscription
+│   ├── docs.js             ← Documentação colaborativa (CRUD, TOC, share)
 │   ├── theme.js            ← Dark mode e seleção de temas
 │   ├── supabase.js         ← Client Supabase (URL + anon key)
 │   └── utils.js            ← Constantes, paleta de cores, helpers
@@ -161,12 +170,13 @@ Configure as variáveis de ambiente no Netlify para push notifications:
     ├── SUPABASE_SETUP.md       ← Guia de configuração
     ├── MODULARIZATION.md       ← Histórico e roadmap
     ├── FRIENDS_MIGRATION.sql   ← SQL do sistema de amigos
-    └── MINDMAP_MIGRATION.sql   ← SQL da tabela mindmaps
+    ├── MINDMAP_MIGRATION.sql   ← SQL da tabela mindmaps
+    └── DOCS_MIGRATION.sql      ← SQL da documentação colaborativa
 ```
 
 ## 🔒 Segurança
 
-- **Row Level Security (RLS)** em todas as 7 tabelas
+- **Row Level Security (RLS)** em todas as 9 tabelas
 - **Políticas granulares** por operação (SELECT, INSERT, UPDATE, DELETE)
 - **Headers HTTP** de segurança (X-Frame-Options, CSP, etc.)
 - **ON DELETE CASCADE** — dados removidos ao deletar conta
