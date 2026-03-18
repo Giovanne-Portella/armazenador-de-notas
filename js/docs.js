@@ -666,19 +666,31 @@ function setupKeyboard() {
    ========================================= */
 
 async function loadFriends() {
+    // Queries separadas — PostgREST não resolve FK para auth.users/profiles
     const { data, error } = await supabase
         .from('friendships')
-        .select('requester_id, addressee_id, profiles!friendships_requester_id_fkey(id, display_name, avatar_url), addressee:profiles!friendships_addressee_id_fkey(id, display_name, avatar_url)')
+        .select('requester_id, addressee_id')
         .eq('status', 'accepted')
         .or(`requester_id.eq.${currentUser.id},addressee_id.eq.${currentUser.id}`);
 
-    if (error) { console.error('Erro ao carregar amigos:', error); return; }
+    if (error || !data || data.length === 0) {
+        if (error) console.error('Erro ao carregar amigos:', error);
+        friends = [];
+        return;
+    }
 
-    friends = (data || []).map(f => {
-        return f.requester_id === currentUser.id
-            ? f.addressee
-            : f.profiles;
-    });
+    const friendIds = data.map(f => f.requester_id === currentUser.id ? f.addressee_id : f.requester_id);
+
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', friendIds);
+
+    friends = (profiles || []).map(p => ({
+        id: p.id,
+        display_name: p.display_name,
+        avatar_url: p.avatar_url
+    }));
 }
 
 async function openShareModal() {
@@ -690,13 +702,26 @@ async function openShareModal() {
     const modal = document.getElementById('shareModal');
     modal.classList.add('show');
 
-    // Carregar shares atuais
+    // Carregar shares atuais (queries separadas — PostgREST não resolve FK para auth.users)
     const { data: currentShares } = await supabase
         .from('document_shares')
-        .select('id, shared_with_id, can_edit, profiles:shared_with_id(id, display_name, avatar_url)')
+        .select('id, shared_with_id, can_edit')
         .eq('document_id', currentDocId);
 
-    const sharedIds = new Set((currentShares || []).map(s => s.shared_with_id));
+    const shares = currentShares || [];
+
+    // Buscar profiles dos shared users
+    const sharedUserIds = shares.map(s => s.shared_with_id);
+    let profilesMap = {};
+    if (sharedUserIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, display_name, avatar_url')
+            .in('id', sharedUserIds);
+        (profiles || []).forEach(p => { profilesMap[p.id] = p; });
+    }
+
+    const sharedIds = new Set(sharedUserIds);
 
     // Amigos disponíveis
     const friendsHtml = friends.length === 0
@@ -717,10 +742,10 @@ async function openShareModal() {
     document.getElementById('shareFriendsList').innerHTML = friendsHtml;
 
     // Quem já tem acesso
-    const sharesHtml = (currentShares || []).length === 0
+    const sharesHtml = shares.length === 0
         ? '<div class="doc-share-empty">Ninguém tem acesso ainda.</div>'
-        : (currentShares || []).map(s => {
-            const profile = s.profiles;
+        : shares.map(s => {
+            const profile = profilesMap[s.shared_with_id];
             return `
                 <div class="doc-share-friend">
                     <div class="doc-share-friend-info">
