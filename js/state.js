@@ -139,10 +139,12 @@ export async function loadState() {
         await ensureSharedColumn(user.id);
     }
 
-    // Notas compartilhadas vão para "Compartilhadas", exceto se o criador marcou como concluída
+    // Notas compartilhadas sempre ficam em "Compartilhadas"
+    // Se o criador concluiu, marcamos isSharedCompleted para exibir como concluída
     const doneColIds = new Set(state.columns.filter(c => c.isDone).map(c => c.id));
     for (const note of state.notes) {
-        if (note.isShared && !doneColIds.has(note.status)) {
+        if (note.isShared) {
+            note.isSharedCompleted = doneColIds.has(note.status);
             note.status = 'compartilhadas';
         }
     }

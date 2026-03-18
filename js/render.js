@@ -85,7 +85,7 @@ export function setupFilters() {
  */
 export function createNoteCard(note) {
     const doneColumnIds = new Set(state.columns.filter(c => c.isDone).map(c => c.id));
-    const isDone = doneColumnIds.has(note.status);
+    const isDone = doneColumnIds.has(note.status) || note.isSharedCompleted;
     const card = document.createElement('div');
     card.className = `note-card ${isDone ? 'completed' : ''}`;
     card.dataset.id = note.id;
@@ -121,19 +121,21 @@ export function createNoteCard(note) {
     const noteActions = document.createElement('div');
     noteActions.className = 'note-actions';
 
-    const completeBtn = document.createElement('button');
-    completeBtn.className = `note-action-btn ${isDone ? 'completed' : ''}`;
-    completeBtn.innerHTML = isDone ? '✅' : '✔️';
-    completeBtn.title = isDone ? 'Marcar como não concluída' : 'Marcar como concluída';
-    completeBtn.onclick = (e) => { e.stopPropagation(); window.toggleComplete(note.id); };
+    // Notas compartilhadas: só mostra botão de excluir (desvincular)
+    if (!note.isShared) {
+        const completeBtn = document.createElement('button');
+        completeBtn.className = `note-action-btn ${isDone ? 'completed' : ''}`;
+        completeBtn.innerHTML = isDone ? '✅' : '✔️';
+        completeBtn.title = isDone ? 'Marcar como não concluída' : 'Marcar como concluída';
+        completeBtn.onclick = (e) => { e.stopPropagation(); window.toggleComplete(note.id); };
+        noteActions.appendChild(completeBtn);
+    }
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'note-action-btn danger';
     deleteBtn.innerHTML = '🗑️';
-    deleteBtn.title = 'Excluir nota';
+    deleteBtn.title = note.isShared ? 'Remover da minha lista' : 'Excluir nota';
     deleteBtn.onclick = (e) => { e.stopPropagation(); window.deleteNote(note.id); };
-
-    noteActions.appendChild(completeBtn);
     noteActions.appendChild(deleteBtn);
     noteHeader.appendChild(noteTitle);
     noteHeader.appendChild(noteActions);

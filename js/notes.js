@@ -6,6 +6,7 @@ import state, { saveNotes, upsertNote, removeNote } from './state.js';
 import { renderColumns, updateStats } from './render.js';
 import { selectNoteColor } from './editor.js';
 import { showToast } from './utils.js';
+import { supabase } from './supabase.js';
 
 /**
  * Abre modal de criação de nova nota
@@ -117,6 +118,12 @@ export function viewNote(id) {
         if (sharedBadge) {
             sharedBadge.style.display = state.selectedNoteForView.isShared ? '' : 'none';
         }
+        // Esconder botões de edição/compartilhamento para notas compartilhadas concluídas
+        const editBtn = document.querySelector('#viewModal .modal-header-actions [onclick="editNote()"]');
+        const shareBtn = document.querySelector('#viewModal .modal-header-actions [onclick="openShareModal()"]');
+        if (editBtn) editBtn.style.display = state.selectedNoteForView.isSharedCompleted ? 'none' : '';
+        if (shareBtn) shareBtn.style.display = state.selectedNoteForView.isShared ? 'none' : '';
+
         document.getElementById('viewModal').classList.add('show');
     }
 }
@@ -134,6 +141,10 @@ export function closeViewModal() {
  */
 export function editNote() {
     if (!state.selectedNoteForView) return;
+    if (state.selectedNoteForView.isSharedCompleted) {
+        showToast('Esta nota foi concluída pelo criador e não pode ser editada.', 'warning');
+        return;
+    }
     state.selectedNoteId = state.selectedNoteForView.id;
     document.getElementById('modalTitle').textContent = 'Editar Nota';
     document.getElementById('modalTitleInput').value = state.selectedNoteForView.title;
@@ -184,7 +195,28 @@ export function toggleComplete(id) {
 /**
  * Exclui uma nota
  */
-export function deleteNote(id) {
+export async function deleteNote(id) {
+    const note = state.notes.find(n => n.id === id);
+    if (!note) return;
+
+    // Nota compartilhada: remove apenas o vínculo (note_shares), não a nota real
+    if (note.isShared) {
+        if (!confirm('Remover esta nota compartilhada da sua lista?')) return;
+        const { error } = await supabase
+            .from('note_shares')
+            .delete()
+            .eq('note_id', id)
+            .eq('user_id', state.user.id);
+        if (error) {
+            showToast('Erro ao remover compartilhamento.', 'error');
+            return;
+        }
+        state.notes = state.notes.filter(n => n.id !== id);
+        renderColumns();
+        showToast('Nota removida da sua lista.', 'info');
+        return;
+    }
+
     if (confirm('Tem certeza que deseja excluir esta nota? A ação não poderá ser desfeita.')) {
         state.notes = state.notes.filter(n => n.id !== id);
         saveNotes();
