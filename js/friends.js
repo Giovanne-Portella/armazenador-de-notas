@@ -120,14 +120,7 @@ export async function loadFriends() {
 
     const { data, error } = await supabase
         .from('friendships')
-        .select(`
-            id,
-            status,
-            requester_id,
-            addressee_id,
-            requester:profiles!friendships_requester_id_fkey(id, email, display_name, avatar_url),
-            addressee:profiles!friendships_addressee_id_fkey(id, email, display_name, avatar_url)
-        `)
+        .select('id, requester_id, addressee_id')
         .eq('status', 'accepted')
         .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
 
@@ -135,17 +128,29 @@ export async function loadFriends() {
         console.error('Erro ao carregar amigos:', error);
         return [];
     }
+    if (!data || data.length === 0) return [];
 
-    return (data || []).map(f => {
-        const friend = f.requester_id === userId ? f.addressee : f.requester;
-        return {
-            friendshipId: f.id,
-            id: friend.id,
-            email: friend.email,
-            displayName: friend.display_name,
-            avatarUrl: friend.avatar_url
-        };
+    // Pega os IDs dos amigos (o outro lado da amizade)
+    const friendIds = data.map(f => f.requester_id === userId ? f.addressee_id : f.requester_id);
+    const friendshipMap = {};
+    data.forEach(f => {
+        const fId = f.requester_id === userId ? f.addressee_id : f.requester_id;
+        friendshipMap[fId] = f.id;
     });
+
+    // Busca perfis
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, display_name, avatar_url')
+        .in('id', friendIds);
+
+    return (profiles || []).map(p => ({
+        friendshipId: friendshipMap[p.id],
+        id: p.id,
+        email: p.email,
+        displayName: p.display_name,
+        avatarUrl: p.avatar_url
+    }));
 }
 
 /* =========================================
@@ -155,11 +160,7 @@ export async function loadFriends() {
 export async function loadPendingRequests() {
     const { data, error } = await supabase
         .from('friendships')
-        .select(`
-            id,
-            created_at,
-            requester:profiles!friendships_requester_id_fkey(id, email, display_name, avatar_url)
-        `)
+        .select('id, requester_id, created_at')
         .eq('addressee_id', state.user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
@@ -168,15 +169,29 @@ export async function loadPendingRequests() {
         console.error('Erro ao carregar solicitações:', error);
         return [];
     }
+    if (!data || data.length === 0) return [];
 
-    return (data || []).map(r => ({
-        friendshipId: r.id,
-        createdAt: r.created_at,
-        id: r.requester.id,
-        email: r.requester.email,
-        displayName: r.requester.display_name,
-        avatarUrl: r.requester.avatar_url
-    }));
+    // Busca perfis dos remetentes
+    const requesterIds = data.map(r => r.requester_id);
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, display_name, avatar_url')
+        .in('id', requesterIds);
+
+    const profileMap = {};
+    (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+    return data.map(r => {
+        const p = profileMap[r.requester_id] || {};
+        return {
+            friendshipId: r.id,
+            createdAt: r.created_at,
+            id: r.requester_id,
+            email: p.email || '',
+            displayName: p.display_name || p.email || '',
+            avatarUrl: p.avatar_url || ''
+        };
+    });
 }
 
 /* =========================================
