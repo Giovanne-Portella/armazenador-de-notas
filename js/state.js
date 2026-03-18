@@ -134,12 +134,50 @@ export async function loadState() {
         state.columns = columns.map(mapColumnFromDb);
     }
 
+    // Se há notas compartilhadas, garantir coluna "Compartilhadas"
+    if (state.notes.some(n => n.isShared)) {
+        await ensureSharedColumn(user.id);
+    }
+
+    // Notas compartilhadas vão para "Compartilhadas", exceto se o criador marcou como concluída
+    const doneColIds = new Set(state.columns.filter(c => c.isDone).map(c => c.id));
+    for (const note of state.notes) {
+        if (note.isShared && !doneColIds.has(note.status)) {
+            note.status = 'compartilhadas';
+        }
+    }
+
     await migrateLocalStorage(user.id);
 }
 
 /* =========================================
    Seed de colunas padrão
    ========================================= */
+
+async function ensureSharedColumn(userId) {
+    const exists = state.columns.some(c => c.id === 'compartilhadas');
+    if (exists) return;
+
+    // Shift existing columns positions by 1
+    for (const col of state.columns) {
+        col.position += 1;
+    }
+    const updates = state.columns.map(c =>
+        supabase.from('columns').update({ position: c.position }).eq('id', c.id).eq('user_id', userId)
+    );
+    await Promise.all(updates);
+
+    // Create "Compartilhadas" at position 0
+    const newCol = { id: 'compartilhadas', title: 'Compartilhadas', position: 0, isDone: false };
+    state.columns.unshift(newCol);
+    await supabase.from('columns').upsert({
+        id: 'compartilhadas',
+        user_id: userId,
+        title: 'Compartilhadas',
+        position: 0,
+        is_done: false
+    });
+}
 
 async function seedDefaultColumns(userId) {
     const rows = DEFAULT_COLUMNS.map(c => ({

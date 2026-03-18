@@ -162,6 +162,11 @@ export function toggleComplete(id) {
     const note = state.notes.find(n => n.id === id);
     if (!note) return;
 
+    if (note.isShared) {
+        showToast('Notas compartilhadas não podem ser movidas.', 'warning');
+        return;
+    }
+
     const doneColumns = state.columns.filter(c => c.isDone);
     const notDoneColumns = state.columns.filter(c => !c.isDone);
     const isDone = doneColumns.some(c => c.id === note.status);

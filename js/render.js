@@ -3,6 +3,7 @@
    ============================================ */
 
 import state, { saveNotes, upsertNote } from './state.js';
+import { showToast } from './utils.js';
 
 /**
  * Gera o HTML das estatísticas usando data-stat para evitar IDs duplicados
@@ -89,16 +90,21 @@ export function createNoteCard(note) {
     card.className = `note-card ${isDone ? 'completed' : ''}`;
     card.dataset.id = note.id;
     card.dataset.color = note.color;
-    card.draggable = true;
 
-    card.ondragstart = (event) => {
-        event.dataTransfer.setData('text', event.target.dataset.id);
-        setTimeout(() => event.target.classList.add('dragging'), 0);
-    };
-    card.ondragend = (event) => {
-        event.target.classList.remove('dragging');
-        document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-zone'));
-    };
+    // Notas compartilhadas não podem ser arrastadas pelo destinatário
+    if (note.isShared) {
+        card.draggable = false;
+    } else {
+        card.draggable = true;
+        card.ondragstart = (event) => {
+            event.dataTransfer.setData('text', event.target.dataset.id);
+            setTimeout(() => event.target.classList.add('dragging'), 0);
+        };
+        card.ondragend = (event) => {
+            event.target.classList.remove('dragging');
+            document.querySelectorAll('.column').forEach(col => col.classList.remove('drop-zone'));
+        };
+    }
     card.onclick = (event) => {
         if (event.target.closest('button') || event.target.tagName === 'IMG') return;
         window.viewNote(note.id);
@@ -263,6 +269,11 @@ export function setupColumns() {
             if (noteEl) noteEl.classList.remove('dragging');
             const noteIndex = state.notes.findIndex(n => n.id == id);
             if (noteIndex !== -1) {
+                if (state.notes[noteIndex].isShared) {
+                    showToast('Notas compartilhadas não podem ser movidas.', 'warning');
+                    document.querySelectorAll('.column').forEach(c => c.classList.remove('drop-zone'));
+                    return;
+                }
                 state.notes[noteIndex].status = col.id;
                 saveNotes();
                 upsertNote(state.notes[noteIndex]);
