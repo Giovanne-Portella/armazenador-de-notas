@@ -34,6 +34,7 @@ import {
     toggleAllAnalysesForExport, exportAnalyses
 } from './export.js';
 import { initPushNotifications } from './push.js';
+import { registerFriendsGlobals, ensureProfile } from './friends.js';
 
 /* =========================================
    Registrar funções globais para HTML onclick
@@ -102,6 +103,9 @@ window.toggleCollapsible = toggleCollapsible;
 
 // Auth
 window.signOut = signOut;
+
+// Amigos
+registerFriendsGlobals();
 
 /* =========================================
    Gestão de Colunas
@@ -267,6 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!session) return;
 
     await loadState();
+    await ensureProfile();
 
     initTheme();
     setupDesktopUI();

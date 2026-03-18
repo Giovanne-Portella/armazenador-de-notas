@@ -64,15 +64,46 @@ export async function loadState() {
     if (!user) return;
     state.user = user;
 
+    // Carregar notas próprias
     const { data: notes, error: notesErr } = await supabase
         .from('notes')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
 
     if (notesErr) {
         console.error('Erro ao carregar notas:', notesErr);
     } else {
         state.notes = (notes || []).map(mapNoteFromDb);
+    }
+
+    // Carregar notas compartilhadas comigo
+    const { data: shares, error: sharesErr } = await supabase
+        .from('note_shares')
+        .select('note_id, shared_by')
+        .eq('user_id', user.id);
+
+    if (!sharesErr && shares && shares.length > 0) {
+        const sharedIds = shares.map(s => s.note_id);
+        const { data: sharedNotes } = await supabase
+            .from('notes')
+            .select('*')
+            .in('id', sharedIds)
+            .order('created_at', { ascending: true });
+
+        if (sharedNotes) {
+            const sharedMapped = sharedNotes.map(n => ({
+                ...mapNoteFromDb(n),
+                isShared: true
+            }));
+            // Evitar duplicatas
+            const existingIds = new Set(state.notes.map(n => n.id));
+            for (const sn of sharedMapped) {
+                if (!existingIds.has(sn.id)) {
+                    state.notes.push(sn);
+                }
+            }
+        }
     }
 
     const { data: analyses, error: analysesErr } = await supabase

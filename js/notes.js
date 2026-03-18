@@ -113,6 +113,10 @@ export function viewNote(id) {
         document.getElementById('viewModalContent').innerHTML = state.selectedNoteForView.content;
         document.getElementById('viewModalGroup').textContent = state.selectedNoteForView.group || 'N/A';
         document.getElementById('viewModalDate').textContent = new Date(state.selectedNoteForView.createdAt).toLocaleDateString();
+        const sharedBadge = document.getElementById('viewSharedBadge');
+        if (sharedBadge) {
+            sharedBadge.style.display = state.selectedNoteForView.isShared ? '' : 'none';
+        }
         document.getElementById('viewModal').classList.add('show');
     }
 }

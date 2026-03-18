@@ -144,7 +144,8 @@ export function createNoteCard(note) {
     noteMeta.className = 'note-meta';
     const groupSpan = note.group ? `<span class="note-group">${note.group}</span>` : '';
     const reminderSpan = note.reminderAt ? `<span class="note-reminder-badge" title="Lembrete: ${new Date(note.reminderAt).toLocaleString()}">🔔</span>` : '';
-    noteMeta.innerHTML = `${groupSpan}${reminderSpan}<span>${new Date(note.createdAt).toLocaleDateString()}</span>`;
+    const sharedSpan = note.isShared ? `<span class="shared-indicator" title="Compartilhada">🤝</span>` : '';
+    noteMeta.innerHTML = `${groupSpan}${reminderSpan}${sharedSpan}<span>${new Date(note.createdAt).toLocaleDateString()}</span>`;
     card.appendChild(noteMeta);
 
     return card;

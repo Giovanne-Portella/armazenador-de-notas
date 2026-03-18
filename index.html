@@ -68,6 +68,7 @@
     <!-- ========== MOBILE: Ações rápidas + Collapsibles ========== -->
     <div class="mobile-only">
         <div class="mobile-actions">
+            <button onclick="openFriendsModal()" title="Amigos">👥</button>
             <button onclick="openAnalysisPanel()" title="Acessar Análises">📊</button>
             <button onclick="showPDFExportModal()" title="Exportar PDF">📄</button>
         </div>
@@ -107,6 +108,7 @@
             <div class="control-group">
                 <button class="success" onclick="openCreateModal()">➕ Criar Nota</button>
                 <button class="secondary" onclick="openAnalysisPanel()">📊 Acessar Análises</button>
+                <button class="secondary" onclick="openFriendsModal()">👥 Amigos</button>
             </div>
             <div class="control-group">
                 <button class="warning" onclick="showPDFExportModal()">📄 Exportar Notas (PDF)</button>
@@ -222,6 +224,7 @@
                 <h2 class="modal-title" id="viewModalTitle">Visualizar Nota</h2>
                 <div class="modal-header-actions">
                     <button class="btn-icon" onclick="editNote()" title="Editar" type="button">✏️</button>
+                    <button class="btn-icon" onclick="openShareModal()" title="Compartilhar com amigo" type="button">🤝</button>
                     <button class="btn-icon" onclick="shareNote('whatsapp')" title="WhatsApp" type="button">📱</button>
                     <button class="btn-icon" onclick="shareNote('discord')" title="Discord" type="button">💬</button>
                     <button class="close-modal" onclick="closeViewModal()" type="button">&times;</button>
@@ -232,6 +235,7 @@
                 <div class="note-meta view-meta">
                     <span>Grupo: <span class="note-group" id="viewModalGroup"></span></span>
                     <span>Criado: <span id="viewModalDate"></span></span>
+                    <span id="viewSharedBadge" class="shared-badge" style="display:none">🤝 Compartilhada</span>
                 </div>
             </div>
         </div>
@@ -429,6 +433,53 @@
 
     <!-- ========== TOAST CONTAINER ========== -->
     <div id="toastContainer" class="toast-container"></div>
+
+    <!-- ========== MODAL: Amigos ========== -->
+    <div class="modal" id="friendsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">👥 Amigos</h2>
+                <button class="close-modal" onclick="closeFriendsModal()" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Busca -->
+                <div class="friend-search-section">
+                    <label class="section-label">Enviar solicitação</label>
+                    <div class="friend-search-row">
+                        <input type="email" id="friendSearchInput" placeholder="Email do usuário..." />
+                        <button class="success" onclick="searchFriend()">Buscar</button>
+                    </div>
+                    <div id="friendSearchResults"></div>
+                </div>
+
+                <!-- Pendentes -->
+                <div class="friend-section">
+                    <label class="section-label">Solicitações pendentes</label>
+                    <div id="pendingRequestsList"></div>
+                </div>
+
+                <!-- Lista de amigos -->
+                <div class="friend-section">
+                    <label class="section-label">Meus amigos</label>
+                    <div id="friendsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: Compartilhar nota ========== -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2 class="modal-title">🤝 Compartilhar nota</h2>
+                <button class="close-modal" onclick="closeShareModal()" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Escolha um amigo para compartilhar:</p>
+                <div id="shareFriendsList"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- ========== JS MODULAR (ES Modules) ========== -->
     <script type="module" src="js/app.js"></script>
