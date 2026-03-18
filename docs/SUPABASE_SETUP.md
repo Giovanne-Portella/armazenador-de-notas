@@ -63,6 +63,8 @@
 
 ## 3. Criar Tabelas e Políticas RLS
 
+### 3.1 Tabelas Base (notes, analyses, columns)
+
 Vá em **SQL Editor** no Supabase Dashboard e execute o script abaixo **em uma única execução**:
 
 ```sql
@@ -76,7 +78,8 @@ CREATE TABLE public.notes (
     content TEXT DEFAULT '',
     group_name TEXT DEFAULT '',
     color TEXT DEFAULT 'gray',
-    status TEXT DEFAULT 'to-do' CHECK (status IN ('notes', 'to-do', 'in-progress', 'impediment', 'agenda', 'completed')),
+    status TEXT DEFAULT 'to-do',
+    reminder_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -94,11 +97,38 @@ CREATE TABLE public.analyses (
 );
 
 -- ============================================
+-- TABELA: columns (Kanban customizável)
+-- ============================================
+CREATE TABLE public.columns (
+    id TEXT NOT NULL,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    position INTEGER DEFAULT 0,
+    is_done BOOLEAN DEFAULT false,
+    PRIMARY KEY (id, user_id)
+);
+
+-- ============================================
+-- TABELA: push_subscriptions (Web Push)
+-- ============================================
+CREATE TABLE public.push_subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ============================================
 -- ÍNDICES (performance)
 -- ============================================
 CREATE INDEX idx_notes_user_id ON public.notes(user_id);
 CREATE INDEX idx_notes_status ON public.notes(user_id, status);
+CREATE INDEX idx_notes_reminder ON public.notes(reminder_at) WHERE reminder_at IS NOT NULL;
 CREATE INDEX idx_analyses_user_id ON public.analyses(user_id);
+CREATE INDEX idx_columns_user_id ON public.columns(user_id);
+CREATE INDEX idx_push_subs_user ON public.push_subscriptions(user_id);
 
 -- ============================================
 -- TRIGGER: auto-atualiza updated_at
@@ -129,6 +159,8 @@ CREATE TRIGGER on_analyses_updated
 -- Habilitar RLS
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analyses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.columns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- NOTES: Políticas por operação
 CREATE POLICY "Usuários veem apenas suas notas"
@@ -165,7 +197,37 @@ CREATE POLICY "Usuários editam apenas suas análises"
 CREATE POLICY "Usuários deletam apenas suas análises"
     ON public.analyses FOR DELETE
     USING (auth.uid() = user_id);
+
+-- COLUMNS: Políticas por operação
+CREATE POLICY "Columns: leitura própria" ON public.columns
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Columns: inserir própria" ON public.columns
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Columns: atualizar própria" ON public.columns
+    FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Columns: deletar própria" ON public.columns
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- PUSH_SUBSCRIPTIONS: Políticas
+CREATE POLICY "Push: leitura própria" ON public.push_subscriptions
+    FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Push: inserir própria" ON public.push_subscriptions
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Push: deletar própria" ON public.push_subscriptions
+    FOR DELETE USING (auth.uid() = user_id);
 ```
+
+### 3.2 Tabelas de Amizade e Compartilhamento
+
+Para habilitar o sistema de amigos e compartilhamento de notas, execute o script em `docs/FRIENDS_MIGRATION.sql`. Ele cria:
+
+- **`profiles`** — Espelho de `auth.users` para busca por email + trigger automático
+- **`friendships`** — Pedidos de amizade (pending/accepted) com UNIQUE constraint
+- **`note_shares`** — Vínculo nota↔destinatário com PK composta
+- **Políticas RLS** específicas para cada tabela
+- **Política adicional em `notes`** para permitir leitura/edição de notas compartilhadas
+
+> ⚠️ Se já existem políticas SELECT/UPDATE em `notes`, pode ser necessário dropar as antigas primeiro.
 
 ---
 
@@ -216,14 +278,16 @@ Após o deploy:
 5. Notas existentes no localStorage serão migradas automaticamente na primeira vez
 
 ### Checklist de segurança:
-- [x] RLS habilitado em todas as tabelas
+- [x] RLS habilitado em todas as tabelas (notes, analyses, columns, profiles, friendships, note_shares, push_subscriptions)
 - [x] Políticas granulares (SELECT, INSERT, UPDATE, DELETE) por usuário
 - [x] `ON DELETE CASCADE` — dados são removidos se o usuário deletar a conta
-- [x] Validação de status via CHECK constraint
-- [x] Índices para performance de queries por user_id
+- [x] Índices para performance de queries por user_id, status, reminder_at
 - [x] Headers de segurança HTTP via Netlify (`_headers`)
 - [x] Chave anon (pública) no frontend — segurança via RLS no backend
 - [x] Trigger automático para updated_at
+- [x] Trigger automático para criação de perfil (profiles) no signup
+- [x] Web Push via VAPID keys (variáveis de ambiente no Netlify)
+- [x] Notas compartilhadas: policies adicionais em notes para SELECT/UPDATE via note_shares
 
 ---
 

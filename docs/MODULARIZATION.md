@@ -4,42 +4,56 @@
 
 ### De → Para
 
-| Antes (Monolito)                         | Depois (Modular)                           |
-| ---------------------------------------- | ------------------------------------------ |
-| 1 arquivo `index.html` com ~3128 linhas  | 1 HTML limpo + 7 CSS + 9 JS = 17 arquivos |
-| CSS embutido no `<style>` (~1380 linhas) | 7 arquivos CSS organizados por função      |
-| JS embutido no `<script>` (~1100 linhas) | 9 módulos ES Module com imports/exports    |
-| Funções globais no escopo window         | Módulos com exports explícitos             |
-| IDs duplicados (stats desktop/mobile)    | `data-stat` attributes sem duplicatas      |
+| Antes (Monolito)                         | Depois (Modular)                            |
+| ---------------------------------------- | ------------------------------------------- |
+| 1 arquivo `index.html` com ~3128 linhas  | 1 HTML limpo + 8 CSS + 13 JS = 22 arquivos |
+| CSS embutido no `<style>` (~1380 linhas) | 8 arquivos CSS organizados por função       |
+| JS embutido no `<script>` (~1100 linhas) | 13 módulos ES Module com imports/exports    |
+| Funções globais no escopo window         | Módulos com exports explícitos              |
+| IDs duplicados (stats desktop/mobile)    | `data-stat` attributes sem duplicatas       |
+| localStorage como persistência           | Supabase PostgreSQL + RLS                   |
 
 ### Estrutura Final
 
 ```
 armazenador-de-notas/
-├── index.html              ← HTML estrutural (~280 linhas)
-├── index.html.bak          ← Backup do monolito original
-├── favicon.png
+├── index.html              ← HTML estrutural (~350 linhas)
+├── login.html              ← Página de login Google OAuth
+├── _headers                ← Headers de segurança HTTP (Netlify)
+├── netlify.toml            ← Config build, functions, cron
+├── sw.js                   ← Service Worker (push + cache v2)
+├── package.json            ← Deps: web-push, @supabase/supabase-js
 ├── css/
 │   ├── variables.css       ← Variáveis e temas de cor
 │   ├── base.css            ← Reset, tipografia, botões
 │   ├── layout.css          ← Header, colunas, stats, controles
-│   ├── components.css      ← Cards, paletas, análises
+│   ├── components.css      ← Cards, paletas, análises, amigos, pull-refresh
 │   ├── editor.css          ← Toolbar, rich editor, blocos
 │   ├── modal.css           ← Modal base e z-index
+│   ├── login.css           ← Login page (glassmorphism)
 │   └── responsive.css      ← Mobile, tablet, small breakpoints
 ├── js/
-│   ├── app.js              ← Entry point e inicialização
-│   ├── state.js            ← Estado centralizado + localStorage
-│   ├── notes.js            ← CRUD de notas
+│   ├── supabase.js         ← Client Supabase (URL + anon key)
+│   ├── auth.js             ← Google OAuth login/logout, session
+│   ├── app.js              ← Entry point, init, pull-to-refresh
+│   ├── state.js            ← Estado centralizado + CRUD Supabase + shared notes
+│   ├── notes.js            ← CRUD de notas (UUID), visualização
 │   ├── editor.js           ← Rich text formatting
-│   ├── render.js           ← Renderização Kanban
+│   ├── render.js           ← Renderização Kanban, drag & drop
 │   ├── theme.js            ← Dark mode e temas
 │   ├── export.js           ← Export/Import PDF e JSON
 │   ├── analysis.js         ← CRUD de análises e blocos
+│   ├── friends.js          ← Amizades, compartilhamento, modais
+│   ├── push.js             ← Web Push subscription e permissão
 │   └── utils.js            ← Constantes e helpers
+├── netlify/
+│   └── functions/
+│       └── check-reminders.mjs  ← Scheduled function (cron 1h)
 └── docs/
-    ├── AI_CONTEXT.md       ← Contexto para assistentes IA
-    └── MODULARIZATION.md   ← Este documento
+    ├── AI_CONTEXT.md        ← Contexto para assistentes IA
+    ├── SUPABASE_SETUP.md    ← Guia de configuração Supabase
+    ├── MODULARIZATION.md    ← Este documento
+    └── FRIENDS_MIGRATION.sql← SQL migração (profiles, friendships, shares)
 ```
 
 ### Bugs Corrigidos
@@ -50,6 +64,26 @@ armazenador-de-notas/
 | 2 | IDs duplicados nos stats desktop/mobile          | Substituído por `data-stat` attributes com `querySelectorAll`    |
 | 3 | Import JSON não funcionava no mobile             | `<input id="importFile">` movido para fora do container `desktop-only` |
 | 4 | CSS duplicado para dark-mode note-card colors    | Unificado em `components.css` sem duplicatas                      |
+| 5 | Push notifications não salvavam no DB            | `checkReminders()` parou de limpar `reminder_at` do DB           |
+| 6 | Cron Netlify rodava a cada minuto                | Alterado de `* * * * *` para `0 * * * *` (cada hora)            |
+| 7 | Friendships 400 Bad Request (PostgREST JOIN)     | Substituído JOINs por queries separadas (friendships → profiles) |
+| 8 | Notas compartilhadas sumiam ao mover             | Forçar status `compartilhadas` para destinatário                  |
+
+### Funcionalidades Adicionadas
+
+| # | Feature                                   | Módulo(s)                    | Commit    |
+|---|-------------------------------------------|------------------------------|-----------|
+| 1 | Colunas Kanban customizáveis              | `state.js`, `render.js`, `app.js` | —    |
+| 2 | Lembretes com push notification nativa    | `push.js`, `sw.js`, `check-reminders.mjs` | `76ffe99` |
+| 3 | Snooze de lembretes (5/15/30/60 min)      | `app.js`                     | `16e361b` |
+| 4 | Sistema de amigos (busca, add, aceitar)   | `friends.js`                 | `002a770` |
+| 5 | Compartilhamento de notas com amigos      | `friends.js`, `state.js`     | `002a770` |
+| 6 | Coluna "Compartilhadas" auto-criada       | `state.js`                   | `bf34835` |
+| 7 | Notas compartilhadas read-only quando concluídas | `notes.js`, `render.js`, `state.js` | `52f74b1` |
+| 8 | Excluir nota compartilhada = desvincular  | `notes.js`                   | `52f74b1` |
+| 9 | Pull-to-refresh no mobile                 | `app.js`, `components.css`   | `cf3ef26` |
+| 10| Toast de feedback com escapeHtml (XSS-safe) | `utils.js`                 | —         |
+| 11| Suporte Median.co OAuth fallback          | `auth.js`                    | `10f1f58` |
 
 ### Melhorias de Responsividade Mobile
 
@@ -69,12 +103,12 @@ armazenador-de-notas/
 
 1. **Testes End-to-End**
    - Implementar testes com Playwright ou Cypress
-   - Cobrir: CRUD de notas, drag & drop, import/export, dark mode
+   - Cobrir: CRUD de notas, drag & drop, import/export, dark mode, friends, sharing
    - Garantir que refatoração não quebrou funcionalidades
 
 2. **PWA (Progressive Web App)**
    - Adicionar `manifest.json` com ícones e splash
-   - Implementar Service Worker para cache offline
+   - Expandir Service Worker para cache offline de assets
    - Permitir instalação como app nativo no mobile
 
 3. **Migrar document.execCommand()**
@@ -83,10 +117,9 @@ armazenador-de-notas/
 
 ### Prioridade Média
 
-4. **Sincronização de Dados**
-   - Opção de sync via Firebase/Supabase (mantendo offline-first)
-   - Conflict resolution para multi-device
-   - Export automático periódico (JSON backup)
+4. **Realtime para notas compartilhadas**
+   - Usar Supabase Realtime (websocket) para atualização instantânea
+   - Atualmente depende de pull-to-refresh manual
 
 5. **Pesquisa Avançada**
    - Busca full-text dentro do conteúdo HTML das notas
@@ -105,10 +138,9 @@ armazenador-de-notas/
 
 ### Prioridade Baixa
 
-8. **Limitar Armazenamento de Imagens**
-   - Comprimir imagens antes de armazenar (canvas resize)
-   - Alerta quando localStorage está perto do limite
-   - Opção de armazenar imagens externamente (link URL)
+8. **Supabase Storage para imagens**
+   - Migrar imagens de base64 inline para Supabase Storage
+   - Reduz tamanho do campo `content` e melhora performance
 
 9. **Markdown Support**
    - Toggle entre rich text e Markdown nos editores
@@ -135,15 +167,23 @@ armazenador-de-notas/
 ### Adicionar novo módulo JS
 1. Criar `js/novo-modulo.js` com exports
 2. Importar em `js/app.js`
-3. Registrar funções necessárias em `window.*` para uso em HTML onclick
+3. Registrar funções necessárias em `window.*` para uso em HTML onclick (ou usar `registerXGlobals()`)
 4. Documentar em `docs/AI_CONTEXT.md`
 
 ### Adicionar novo CSS
 1. Criar `css/novo-estilo.css`
 2. Linkar em `index.html` na ordem correta (variáveis → base → específico → responsive)
 
-### Convencões
+### Adicionar nova tabela Supabase
+1. Criar SQL de migração em `docs/FRIENDS_MIGRATION.sql` (ou novo arquivo)
+2. Incluir RLS policies + índices + cascade
+3. Atualizar `docs/SUPABASE_SETUP.md` e `docs/AI_CONTEXT.md`
+4. Criar funções CRUD em `state.js` ou módulo específico
+
+### Convenções
 - Funções públicas: `export function nomeFuncao()`
 - Estado: sempre via `state.js`
-- Persistência: sempre via `saveNotes()` / `saveAnalyses()`
+- Persistência: CRUD via funções exportadas de `state.js` (`upsertNote`, `removeNote`, etc.)
 - HTML dinâmico: prefira DOM API sobre innerHTML quando possível (segurança)
+- Queries PostgREST: usar queries separadas para FK em `auth.users` (não resolve JOIN)
+- Feedback: sempre usar `showToast()` para informar o usuário
