@@ -927,3 +927,51 @@ body.dark-mode .note-card[data-color="gray"]   { background: rgba(148, 163, 184,
     font-size: 0.7rem;
     opacity: 0.7;
 }
+
+/* === PULL TO REFRESH === */
+
+.pull-refresh-indicator {
+    position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-card-light);
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    padding: 0.5rem 1.25rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    z-index: 9999;
+    transition: top 0.3s ease;
+    font-size: 0.85rem;
+}
+
+.dark-mode .pull-refresh-indicator {
+    background: var(--bg-card-dark);
+    border-color: var(--border-dark);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+.pull-refresh-indicator.visible {
+    top: 12px;
+}
+
+.pull-refresh-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: pullSpin 0.6s linear infinite;
+}
+
+.dark-mode .pull-refresh-spinner {
+    border-color: var(--border-dark);
+    border-top-color: var(--accent);
+}
+
+@keyframes pullSpin {
+    to { transform: rotate(360deg); }
+}

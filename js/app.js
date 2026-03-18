@@ -263,6 +263,54 @@ async function snoozeReminder(minutes) {
 }
 
 /* =========================================
+   Pull-to-Refresh (mobile)
+   ========================================= */
+
+function setupPullToRefresh() {
+    let startY = 0;
+    let pulling = false;
+    let refreshing = false;
+    const threshold = 80;
+    const indicator = document.getElementById('pullRefreshIndicator');
+
+    document.addEventListener('touchstart', (e) => {
+        if (refreshing) return;
+        if (window.scrollY === 0 && !document.querySelector('.modal.show')) {
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!pulling || refreshing) return;
+        const dy = e.touches[0].clientY - startY;
+        if (dy > threshold && window.scrollY === 0) {
+            indicator.classList.add('visible');
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', async () => {
+        if (!pulling || refreshing) return;
+        pulling = false;
+
+        if (indicator.classList.contains('visible')) {
+            refreshing = true;
+            try {
+                await loadState();
+                renderColumns();
+                updateStats();
+                shownReminders.clear();
+                showToast('Notas atualizadas!', 'success');
+            } catch (err) {
+                console.error('Erro ao atualizar:', err);
+            }
+            indicator.classList.remove('visible');
+            refreshing = false;
+        }
+    });
+}
+
+/* =========================================
    Inicialização
    ========================================= */
 
@@ -304,6 +352,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Verificar lembretes a cada 30s (notificação in-app)
     checkReminders();
     setInterval(checkReminders, 30000);
+
+    // Pull-to-refresh no mobile
+    setupPullToRefresh();
 });
 
 /**
