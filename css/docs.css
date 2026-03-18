@@ -459,6 +459,10 @@ body.dark-mode .text-color-palette {
     padding: 2rem;
     display: flex;
     justify-content: center;
+    background: var(--bg-editor-wrapper, #e8e8e8);
+}
+body.dark-mode .doc-editor-wrapper {
+    background: var(--bg-editor-wrapper-dark, #1a1a1a);
 }
 
 .doc-editor {
@@ -469,11 +473,21 @@ body.dark-mode .text-color-palette {
     font-size: 1rem;
     line-height: 1.8;
     color: var(--text-light);
-    padding: 1rem;
+    padding: 2rem 2.5rem;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    background: #fff;
+    border-left: 1px solid var(--border-light);
+    border-right: 1px solid var(--border-light);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
 }
-body.dark-mode .doc-editor { color: var(--text-dark); }
+body.dark-mode .doc-editor {
+    color: var(--text-dark);
+    background: var(--surface-dark);
+    border-left-color: var(--border-dark);
+    border-right-color: var(--border-dark);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
 
 .doc-editor:empty::before {
     content: 'Comece a escrever sua documentação...';
